@@ -1,5 +1,8 @@
 .env
 venv/
+venv312/
 __pycache__/
 *.pyc
 .pytest_cache/
+app/static/videos/*.mp4
+app/ml/yolo/weights/*.pt

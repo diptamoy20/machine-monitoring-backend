@@ -7,6 +7,7 @@ StatusEnum = Literal["running", "standby", "stop"]
 class MachineBase(BaseModel):
     name: str = Field(..., description="The name of the machine")
     image_url: Optional[str] = Field(None, description="The URL of the machine image")
+    video_url: Optional[str] = Field(None, description="The URL of the machine video")
     status: StatusEnum = Field(..., description="The running status of the machine (running, standby, stop)")
 
 class MachineCreate(MachineBase):
@@ -15,6 +16,7 @@ class MachineCreate(MachineBase):
 class MachineUpdate(BaseModel):
     name: Optional[str] = Field(None, description="The name of the machine")
     image_url: Optional[str] = Field(None, description="The URL of the machine image")
+    video_url: Optional[str] = Field(None, description="The URL of the machine video")
     status: Optional[StatusEnum] = Field(None, description="The running status of the machine (running, standby, stop)")
 
 class MachineResponse(MachineBase):

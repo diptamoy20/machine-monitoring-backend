@@ -9,6 +9,7 @@ class MachineStatus(Base):
     mc_id = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     image_url = Column(String, nullable=True)
+    video_url = Column(String, nullable=True)
     status = Column(String, nullable=False)
     
     # Store aware datetime internally using UTC

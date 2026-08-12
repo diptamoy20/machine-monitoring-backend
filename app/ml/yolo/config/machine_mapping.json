@@ -1,0 +1,8 @@
+{
+  "MC-001": { "video_filename": "video-machine-A.mp4", "roi_index": 0 },
+  "MC-002": { "video_filename": "video-machine-A.mp4", "roi_index": 1 },
+  "MC-003": { "video_filename": "video-machine-B.mp4", "roi_index": 0 },
+  "MC-004": { "video_filename": "video-machine-B.mp4", "roi_index": 1 },
+  "MC-005": { "video_filename": "video-machine-A.mp4", "roi_index": 0 },
+  "MC-006": { "video_filename": "video-machine-B.mp4", "roi_index": 1 }
+}

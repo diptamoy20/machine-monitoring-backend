@@ -6,3 +6,7 @@ python-dotenv
 pydantic
 pytest
 httpx
+# YOLO inference dependencies
+ultralytics
+opencv-python
+numpy

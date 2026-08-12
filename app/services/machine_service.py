@@ -21,6 +21,7 @@ def create_machine(db: Session, machine: MachineCreate):
         mc_id=machine.mc_id,
         name=machine.name,
         image_url=machine.image_url,
+        video_url=machine.video_url,
         status=machine.status
     )
     db.add(db_machine)
