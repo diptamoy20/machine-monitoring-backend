@@ -24,9 +24,4 @@ CONFIDENCE_FLOOR = 90.0        # below this, label shown as "uncertain" (also ga
 
 # Recording tuning
 RECORD_SECONDS = 30
-# NOTE: CONFIDENCE_THRESHOLD (requiring ~100%) has been removed.
-# Recording now triggers on ANY confident "running" or "stopped" result
-# (i.e. anything NOT flagged "uncertain" per CONFIDENCE_FLOOR above).
-# Only ONE clip is saved per video processing session - see recorder.py.
-
 DEBUG_TRIGGER = False
