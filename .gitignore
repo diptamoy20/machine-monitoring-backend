@@ -6,3 +6,6 @@ __pycache__/
 .pytest_cache/
 app/static/videos/*.mp4
 app/ml/yolo/weights/*.pt
+ 
+Trash/ 
+*.zip 
