@@ -18,6 +18,7 @@ try:
     Base.metadata.create_all(bind=engine)
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS video_url VARCHAR;"))
+        conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS detected_at TIMESTAMPTZ;"))
     logger.info("Tables created or verified successfully.")
 except Exception as e:
     logger.error("Failed to create tables. Database might be unreachable.")
@@ -42,6 +43,7 @@ app.add_middleware(
 os.makedirs("app/static", exist_ok=True)
 os.makedirs("app/static/videos", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/api/static", StaticFiles(directory="app/static"), name="static_api")
 
 # Register routers
 app.include_router(machines.router)

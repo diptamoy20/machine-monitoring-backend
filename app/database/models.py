@@ -11,7 +11,9 @@ class MachineStatus(Base):
     image_url = Column(String, nullable=True)
     video_url = Column(String, nullable=True)
     status = Column(String, nullable=False)
-    
-    # Store aware datetime internally using UTC
+
+    # Exact timestamp the current evidence video was generated
+    detected_at = Column(DateTime(timezone=True), nullable=True)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
