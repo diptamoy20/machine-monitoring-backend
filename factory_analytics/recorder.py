@@ -1,18 +1,17 @@
-"""
+﻿"""
 Handles ONE-TIME triggered clip recording per machine (per ROI).
 
 Workflow:
-1. Records a single 30-second clip into DETECTION_DIR (a temporary/staging
-   folder) on the first confident running/stopped detection for this machine.
-   OpenCV's VideoWriter uses 'mp4v' codec here, which is NOT browser-playable
-   on its own - it's just used as an intermediate recording format.
-2. Once recording finishes, the clip is transcoded to H.264 (browser-compatible)
-   directly into FINAL_DIR (the folder FastAPI serves as static files,
-   e.g. app/static/videos) using FFmpeg. The original mp4v file is deleted
-   after a successful transcode.
-3. Notifies the API via PATCH /api/machines/{machine_id} with the new
-   status, video_url, and detected_at timestamp.
-4. Only ONE clip is saved per machine per video-processing session.
+1. Records a single 30-second clip into DETECTION_DIR on the first confident
+   running/stopped detection for this machine. Also saves a JPEG snapshot
+   of the triggering frame at the same moment.
+2. The video is transcoded to H.264 and moved into FINAL_DIR.
+   The image is saved directly into FINAL_IMAGE_DIR (no transcoding needed).
+3. Notifies the API in TWO ways, but ONLY if the final video file is
+   confirmed to exist on disk:
+   a) PATCH /api/machines/{machine_id}   - updates status, video_url, image_url
+   b) POST  /api/detections              - logs a permanent history event
+4. Only ONE clip+image is saved per machine per video-processing session.
 
 REQUIRES: FFmpeg must be installed and accessible on PATH.
 Check with: ffmpeg -version
@@ -27,38 +26,50 @@ from datetime import datetime
 
 
 class ClipRecorder:
-    def __init__(self, detection_dir, final_dir, record_seconds, api_base_url, machine_id):
+    def __init__(self, detection_dir, final_dir, final_image_dir, record_seconds, api_base_url, machine_id):
         self.detection_dir = detection_dir
         self.final_dir = final_dir
+        self.final_image_dir = final_image_dir
         self.record_seconds = record_seconds
         self.api_base_url = api_base_url
         self.machine_id = machine_id
 
         os.makedirs(self.detection_dir, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
+        os.makedirs(self.final_image_dir, exist_ok=True)
 
         self.recording = False
         self.already_saved = False
         self.writer = None
         self.frames_written = 0
         self.frames_target = 0
-        self.filename = None       # temp file path (mp4v, in detection_dir)
-        self.final_path = None     # final file path (H.264, in final_dir)
+        self.filename = None
+        self.final_path = None
+        self.image_path = None
 
-    def _generate_filename(self, status):
+    def _generate_filenames(self, status):
         now = datetime.now()
         timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
         status_label = status.capitalize()
-        base_name = f"{self.machine_id}_{status_label}_{timestamp}.mp4"
-        return os.path.join(self.detection_dir, base_name), base_name
+        base_name = f"{self.machine_id}_{status_label}_{timestamp}"
+        video_temp_path = os.path.join(self.detection_dir, base_name + ".mp4")
+        video_final_path = os.path.join(self.final_dir, base_name + ".mp4")
+        image_final_path = os.path.join(self.final_image_dir, base_name + ".jpg")
+        return video_temp_path, video_final_path, image_final_path, base_name
 
     def maybe_start(self, frame, fps, should_trigger, status):
         if self.already_saved or self.recording:
             return
 
         if should_trigger:
-            self.filename, base_name = self._generate_filename(status)
-            self.final_path = os.path.join(self.final_dir, base_name)
+            self.filename, self.final_path, self.image_path, base_name = self._generate_filenames(status)
+
+            try:
+                cv2.imwrite(self.image_path, frame)
+                print(f"[SNAPSHOT SAVED] {self.machine_id} -> {self.image_path}")
+            except Exception as e:
+                print(f"[SNAPSHOT FAILED] {self.machine_id} could not save image: {e}")
+                self.image_path = None
 
             h, w = frame.shape[:2]
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
@@ -88,42 +99,44 @@ class ClipRecorder:
             if transcoded:
                 print(f"[TRANSCODED] {self.machine_id} -> {self.final_path}")
                 try:
-                    os.remove(self.filename)  # clean up the original mp4v intermediate file
+                    os.remove(self.filename)
                 except OSError as e:
                     print(f"[CLEANUP WARNING] Could not remove temp file: {e}")
                 self.filename = self.final_path
             else:
-                # Fallback: move the original file so it's not lost, even
-                # though it likely won't play in-browser without transcoding
                 print(f"[TRANSCODE FAILED] Falling back to plain move (may not play in browser)")
                 try:
                     shutil.move(self.filename, self.final_path)
                     self.filename = self.final_path
                 except Exception as e:
                     print(f"[MOVE FAILED] {self.machine_id} could not move clip: {e}")
+                    self.filename = None
 
-            self._notify_api()
+            if self.filename and os.path.exists(self.filename):
+                self._notify_api()
+            else:
+                print(f"[API UPDATE SKIPPED] {self.machine_id} - no valid file to reference, "
+                      f"database was NOT updated with a broken video_url")
+
             self.already_saved = True
 
         self.recording = False
         self.writer = None
 
     def _transcode_to_h264(self, input_path, output_path):
-        """Converts the OpenCV-written clip to browser-compatible H.264 using FFmpeg."""
         cmd = [
             "ffmpeg", "-y",
             "-i", input_path,
             "-c:v", "libx264",
             "-preset", "fast",
-            "-pix_fmt", "yuv420p",       # ensures broad browser/device compatibility
-            "-movflags", "+faststart",   # allows playback to start before full download
+            "-pix_fmt", "yuv420p",
+            "-movflags", "+faststart",
             output_path
         ]
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
         except FileNotFoundError:
-            print("[TRANSCODE ERROR] ffmpeg not found on PATH. "
-                  "Install FFmpeg and ensure 'ffmpeg -version' works in your terminal.")
+            print("[TRANSCODE ERROR] ffmpeg not found on PATH.")
             return False
         except subprocess.TimeoutExpired:
             print("[TRANSCODE ERROR] ffmpeg timed out after 120s.")
@@ -136,7 +149,7 @@ class ClipRecorder:
 
     def _notify_api(self):
         base_name = os.path.basename(self.filename)
-        detected_at = datetime.now().astimezone().isoformat()   # includes timezone offset
+        detected_at = datetime.now().astimezone().isoformat()
 
         parts = os.path.splitext(base_name)[0].split("_")
         status_raw = parts[1] if len(parts) > 1 else "unknown"
@@ -145,18 +158,43 @@ class ClipRecorder:
         status_map = {"running": "running", "stopped": "stop"}
         api_status = status_map.get(status, status)
 
-        payload = {
-            "status": api_status,
-            "video_url": f"/static/videos/{base_name}",
-            "detected_at": detected_at,
-            }
+        video_url = f"/static/videos/{base_name}"
 
-        url = f"{self.api_base_url}/api/machines/{self.machine_id}"
+        image_url = None
+        if self.image_path and os.path.exists(self.image_path):
+            image_base_name = os.path.basename(self.image_path)
+            image_url = f"/static/images/{image_base_name}"
+
+        patch_payload = {
+            "status": api_status,
+            "video_url": video_url,
+            "detected_at": detected_at,
+        }
+        if image_url:
+            patch_payload["image_url"] = image_url
+
+        patch_url = f"{self.api_base_url}/api/machines/{self.machine_id}"
         try:
-            response = requests.patch(url, json=payload, timeout=5)
+            response = requests.patch(patch_url, json=patch_payload, timeout=5)
             if response.status_code == 200:
-                print(f"[API UPDATED] {self.machine_id} -> {payload}")
+                print(f"[API UPDATED] {self.machine_id} -> {patch_payload}")
             else:
                 print(f"[API UPDATE FAILED] {self.machine_id} {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"[API UPDATE ERROR] {self.machine_id} could not reach API: {e}")
+
+        history_payload = {
+            "mc_id": self.machine_id,
+            "status": api_status,
+            "video_url": video_url,
+            "detected_at": detected_at,
+        }
+        history_url = f"{self.api_base_url}/api/detections"
+        try:
+            response = requests.post(history_url, json=history_payload, timeout=5)
+            if response.status_code == 201:
+                print(f"[HISTORY LOGGED] {self.machine_id} -> {history_payload}")
+            else:
+                print(f"[HISTORY LOG FAILED] {self.machine_id} {response.status_code}: {response.text}")
+        except requests.exceptions.RequestException as e:
+            print(f"[HISTORY LOG ERROR] {self.machine_id} could not reach API: {e}")
