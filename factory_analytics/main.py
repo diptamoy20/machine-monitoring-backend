@@ -1,9 +1,9 @@
-"""
+﻿"""
 Entry point. Runs machine status verification across all configured videos:
 - Loads/generates ROIs per video, each with a persistent unique machine_id
 - Runs the classifier on each ROI per frame (letterbox + smoothing + confidence floor)
-- Triggers a one-time 30s clip recording per machine on a confident
-  running/stopped detection, auto-moves the clip to the static folder,
+- Triggers a one-time 30s clip recording + snapshot image per machine on a
+  confident running/stopped detection, auto-moves both to the static folder,
   and notifies the API so the machine's live status stays in sync
 - Displays a live overlay window per video
 """
@@ -42,12 +42,11 @@ def run_on_video(video_path, model, roi_manager, smoother):
     if fps <= 0:
         fps = 25
 
-    # One recorder per machine (keyed by machine_id), so each machine gets
-    # its own independent one-time 30s clip + API update, not a shared one.
     recorders = {
         roi["machine_id"]: ClipRecorder(
             config.DETECTION_DIR,
             config.FINAL_VIDEO_DIR,
+            config.FINAL_IMAGE_DIR,
             config.RECORD_SECONDS,
             config.API_BASE_URL,
             roi["machine_id"],
@@ -93,7 +92,6 @@ def run_on_video(video_path, model, roi_manager, smoother):
                 should_trigger = final_label in ("running", "stopped")
                 recorders[machine_id].maybe_start(frame, fps, should_trigger, final_label)
 
-        # Write frames for any machine currently recording
         for recorder in recorders.values():
             recorder.write_if_recording(frame)
 
@@ -110,7 +108,7 @@ def run_on_video(video_path, model, roi_manager, smoother):
 
 def main():
     model = YOLO(config.MODEL_PATH)
-    roi_manager = ROIManager(config.ROI_CONFIG_PATH, id_start=config.ROI_ID_START)
+    roi_manager = ROIManager(config.ROI_CONFIG_PATH, valid_machine_ids=config.MACHINE_IDS)
     smoother = LabelSmoother(config.SMOOTHING_WINDOW)
 
     for video_path in config.VIDEO_PATHS:

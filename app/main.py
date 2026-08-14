@@ -1,11 +1,11 @@
-import logging
+﻿import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.config import settings
 from app.database.connection import engine, Base
-from app.routes import machines, inference
+from app.routes import machines, inference, detection
 import os
 
 # Configure basic logging
@@ -48,6 +48,7 @@ app.mount("/api/static", StaticFiles(directory="app/static"), name="static_api")
 # Register routers
 app.include_router(machines.router)
 app.include_router(inference.router)
+app.include_router(detection.router)
 
 
 @app.on_event("startup")
