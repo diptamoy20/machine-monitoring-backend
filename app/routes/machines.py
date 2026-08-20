@@ -70,3 +70,15 @@ def patch_machine(mc_id: str, machine: MachineUpdate, db: Session = Depends(get_
     Partially update a machine's metadata or status.
     """
     return machine_service.update_machine(db, mc_id, machine)
+
+import json
+from pathlib import Path
+
+UTILIZATION_STATE_PATH = Path(__file__).resolve().parent.parent.parent / "utilization_state.json"
+
+@router.get("/utilization/state", summary="Get raw utilization data from JSON file")
+def get_utilization_state():
+    if not UTILIZATION_STATE_PATH.exists():
+        raise HTTPException(status_code=404, detail=f"utilization_state.json not found at {UTILIZATION_STATE_PATH}")
+    with open(UTILIZATION_STATE_PATH, "r") as f:
+        return json.load(f)

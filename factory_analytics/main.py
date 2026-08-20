@@ -2,6 +2,8 @@
 Entry point. Runs machine status verification across all configured videos:
 - Loads/generates ROIs per video, each with a persistent unique machine_id
 - Runs the classifier on each ROI per frame (letterbox + smoothing + confidence floor)
+- Tracks cumulative runtime/downtime/idle time per machine and writes a
+  real-time utilization log (overwritten each time a video finishes)
 - Triggers a one-time 30s clip recording + snapshot image per machine on a
   confident running/stopped detection, auto-moves both to the static folder,
   and notifies the API so the machine's live status stays in sync
@@ -15,9 +17,10 @@ import config
 from roi_manager import ROIManager
 from model_utils import letterbox_crop, LabelSmoother, resolve_final_label, get_label_color
 from recorder import ClipRecorder
+from utilization_tracker import UtilizationTracker
 
 
-def run_on_video(video_path, model, roi_manager, smoother):
+def run_on_video(video_path, model, roi_manager, smoother, tracker):
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         print(f"Failed to open: {video_path}")
@@ -41,6 +44,8 @@ def run_on_video(video_path, model, roi_manager, smoother):
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps <= 0:
         fps = 25
+
+    frame_duration = 1.0 / fps
 
     recorders = {
         roi["machine_id"]: ClipRecorder(
@@ -78,6 +83,8 @@ def run_on_video(video_path, model, roi_manager, smoother):
                 smoothed_label = smoother.smooth(video_key, idx, raw_class_name)
                 final_label = resolve_final_label(smoothed_label, confidence, config.CONFIDENCE_FLOOR)
 
+                tracker.add_frame(machine_id, final_label, frame_duration)
+
                 if config.DEBUG_TRIGGER and final_label in ("running", "stopped"):
                     print(f"[TRIGGER-CHECK] {video_key} {machine_id} "
                           f"label={final_label} confidence={confidence!r}")
@@ -102,6 +109,8 @@ def run_on_video(video_path, model, roi_manager, smoother):
     for recorder in recorders.values():
         recorder.stop(early=True)
 
+    tracker.write_all_logs()
+
     cap.release()
     cv2.destroyWindow(window_name)
 
@@ -110,9 +119,10 @@ def main():
     model = YOLO(config.MODEL_PATH)
     roi_manager = ROIManager(config.ROI_CONFIG_PATH, valid_machine_ids=config.MACHINE_IDS)
     smoother = LabelSmoother(config.SMOOTHING_WINDOW)
+    tracker = UtilizationTracker(config.UTILIZATION_STATE_PATH, config.UTILIZATION_LOG_PATH, api_base_url=config.API_BASE_URL)
 
     for video_path in config.VIDEO_PATHS:
-        run_on_video(video_path, model, roi_manager, smoother)
+        run_on_video(video_path, model, roi_manager, smoother, tracker)
 
     print("All videos processed.")
 

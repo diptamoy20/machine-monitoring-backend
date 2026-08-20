@@ -1,18 +1,16 @@
-﻿import logging
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.config import settings
 from app.database.connection import engine, Base
-from app.routes import machines, inference, detection
+from app.routes import machines, inference, detection, utilization
 import os
 
-# Configure basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create tables in PostgreSQL using SQLAlchemy Base
 logger.info("Creating database tables if they do not exist...")
 try:
     Base.metadata.create_all(bind=engine)
@@ -30,7 +28,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Configure CORS for frontend access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.FRONTEND_URL],
@@ -39,26 +36,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files for images and videos
 os.makedirs("app/static", exist_ok=True)
 os.makedirs("app/static/videos", exist_ok=True)
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.mount("/api/static", StaticFiles(directory="app/static"), name="static_api")
 
-# Register routers
 app.include_router(machines.router)
 app.include_router(inference.router)
 app.include_router(detection.router)
+app.include_router(utilization.router)
 
 
 @app.on_event("startup")
 async def startup_event():
-    """
-    Load the YOLO model once at application startup.
-    The model is held in memory and reused for all inference requests.
-    If loading fails, the inference endpoints will return 503 but the
-    machine monitoring API continues to work normally.
-    """
     from app.ml.yolo import predictor
     try:
         predictor.load_model(
@@ -75,15 +65,9 @@ async def startup_event():
 
 @app.get("/", summary="Root API endpoint")
 def read_root():
-    """
-    Root endpoint verifying the API is up.
-    """
     return {"message": "Machine Monitoring API is running"}
 
 
 @app.get("/health", summary="Health check endpoint")
 def health_check():
-    """
-    Health check for monitoring tools.
-    """
     return {"status": "ok"}
