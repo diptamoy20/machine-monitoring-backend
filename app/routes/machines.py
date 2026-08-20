@@ -2,7 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.database.connection import get_db
-from app.schemas.machine import MachineResponse, MachineCreate, MachineUpdate
+from app.schemas.machine import (
+    MachineResponse, 
+    MachineCreate, 
+    MachineUpdate,
+    MachineUtilizationRequest,
+    MachineUtilizationResponse
+)
 from app.services import machine_service
 
 router = APIRouter(prefix="/api/machines", tags=["machines"])
@@ -36,6 +42,28 @@ def update_machine(mc_id: str, machine: MachineUpdate, db: Session = Depends(get
     """
     return machine_service.update_machine(db, mc_id, machine)
 
+@router.post("/utilization", response_model=MachineUtilizationResponse, summary="Calculate machine utilization")
+def calculate_machine_utilization(data: MachineUtilizationRequest):
+    """
+    Calculate the total available time and utilization percentage based on Runtime, Idle Time, and Downtime.
+    This data is typically provided by the AI model for each machine.
+    """
+    total_available_time = data.runtime + data.idle_time + data.downtime
+    
+    # Handle division by zero
+    utilization = 0.0
+    if total_available_time > 0:
+        utilization = (data.runtime / total_available_time) * 100
+        
+    return MachineUtilizationResponse(
+        mc_id=data.mc_id,
+        machine_name=data.machine_name,
+        runtime=data.runtime,
+        idle_time=data.idle_time,
+        downtime=data.downtime,
+        total_available_time=total_available_time,
+        utilization=round(utilization, 2)
+    )
 @router.patch("/{mc_id}", response_model=MachineResponse, summary="Partially update a machine")
 def patch_machine(mc_id: str, machine: MachineUpdate, db: Session = Depends(get_db)):
     """
