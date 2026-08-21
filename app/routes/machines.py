@@ -77,8 +77,20 @@ from pathlib import Path
 UTILIZATION_STATE_PATH = Path(__file__).resolve().parent.parent.parent / "utilization_state.json"
 
 @router.get("/utilization/state", summary="Get raw utilization data from JSON file")
-def get_utilization_state():
+def get_utilization_state(db: Session = Depends(get_db)):
     if not UTILIZATION_STATE_PATH.exists():
         raise HTTPException(status_code=404, detail=f"utilization_state.json not found at {UTILIZATION_STATE_PATH}")
+    
     with open(UTILIZATION_STATE_PATH, "r") as f:
-        return json.load(f)
+        data = json.load(f)
+        
+    from app.database.models import MachineStatus
+    
+    machine_statuses = db.query(MachineStatus).all()
+    image_map = {ms.mc_id: ms.image_url for ms in machine_statuses}
+    
+    for mc_id, stats in data.items():
+        if isinstance(stats, dict):
+            stats["image_url"] = image_map.get(mc_id)
+            
+    return data
