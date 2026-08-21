@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Float
 from app.database.connection import Base
 
 class MachineStatus(Base):
@@ -51,3 +51,4 @@ class MachineUtilization(Base):
     utilization_percent = Column(Float, nullable=False, default=0.0)
 
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
+
