@@ -1,0 +1,18 @@
+{
+  "MC-001": {
+    "runtime": 10.0,
+    "downtime": 2.0,
+    "idle": 5.0,
+    "total_available_time": 17.0,
+    "total_available_time_formatted": "17h 0m",
+    "utilization_percent": 58.82
+  },
+  "MC-002": {
+    "runtime": 8.0,
+    "downtime": 1.0,
+    "idle": 3.0,
+    "total_available_time": 12.0,
+    "total_available_time_formatted": "12h 0m",
+    "utilization_percent": 66.67
+  }
+}

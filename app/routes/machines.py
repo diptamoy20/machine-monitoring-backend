@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from app.database.connection import get_db
+from app.database.models import MachineStatus
 from app.schemas.machine import MachineResponse, MachineCreate, MachineUpdate
 from app.services import machine_service
 
@@ -21,11 +22,23 @@ def get_machines(db: Session = Depends(get_db)):
 
 
 @router.get("/utilization/state", summary="Get raw utilization data from JSON file")
-def get_utilization_state():
+def get_utilization_state(db: Session = Depends(get_db)):
+    """
+    Read utilization_state.json and enrich each machine's entry with its
+    current image_url from the database.
+    """
     if not UTILIZATION_STATE_PATH.exists():
         raise HTTPException(status_code=404, detail=f"utilization_state.json not found at {UTILIZATION_STATE_PATH}")
     with open(UTILIZATION_STATE_PATH, "r") as f:
-        return json.load(f)
+        data = json.load(f)
+
+    machine_statuses = db.query(MachineStatus).all()
+    image_map = {ms.mc_id: ms.image_url for ms in machine_statuses}
+    for mc_id, stats in data.items():
+        if isinstance(stats, dict):
+            stats["image_url"] = image_map.get(mc_id)
+
+    return data
 
 
 @router.get("/{mc_id}", response_model=MachineResponse, summary="Get a single machine by ID")

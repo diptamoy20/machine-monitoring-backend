@@ -1,6 +1,6 @@
 import logging
 from sqlalchemy.orm import Session
-from app.database.models import MachineUtilization
+from app.database.models import MachineUtilization, MachineStatus
 from app.schemas.utilization import UtilizationSyncRequest
 
 logger = logging.getLogger(__name__)
@@ -32,4 +32,15 @@ def sync_utilization(db: Session, payload: UtilizationSyncRequest):
 
 
 def get_all_utilization(db: Session):
-    return db.query(MachineUtilization).all()
+    results = (
+        db.query(MachineUtilization, MachineStatus.image_url)
+        .outerjoin(MachineStatus, MachineUtilization.mc_id == MachineStatus.mc_id)
+        .all()
+    )
+    
+    response = []
+    for util, img_url in results:
+        util.image_url = img_url
+        response.append(util)
+        
+    return response
