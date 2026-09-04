@@ -1,4 +1,4 @@
-﻿"""
+"""
 Handles selecting, saving, and loading Regions of Interest (ROIs) per video.
 
 Each ROI is stored as: {"bbox": [x, y, w, h], "machine_id": "MC-XXX"}
@@ -88,3 +88,8 @@ class ROIManager:
             del self.all_config[key]
             self._save()
         return self.get_rois(video_path, first_frame)
+
+    def save_rois_for_key(self, key, rois):
+        """Used by the polygon ROI tool to save entries keyed by channel (not filename)."""
+        self.all_config[key] = rois
+        self._save()

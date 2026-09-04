@@ -78,3 +78,24 @@ def create_files_if_not_exist():
 
 if __name__ == "__main__":
     create_files_if_not_exist()
+# ==========================================
+# LIVE RTSP CAMERA STREAMS
+# ==========================================
+RTSP_URLS = [
+    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=22&subtype=1",
+    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=23&subtype=1",
+    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=24&subtype=1",
+    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=25&subtype=1",
+]
+
+UTILIZATION_SYNC_INTERVAL_SECONDS = 60
+RTSP_RECONNECT_DELAY_SECONDS = 5
+
+def utilization_state_path_for_channel(channel_key):
+    return os.path.join(os.path.dirname(UTILIZATION_STATE_PATH), f"utilization_state_{channel_key}.json")
+
+def utilization_log_path_for_channel(channel_key):
+    return os.path.join(os.path.dirname(UTILIZATION_LOG_PATH), f"utilization_log_{channel_key}.txt")
+
+CAMERA_LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "camera_log.json")
+CAMERA_LOG_WRITE_INTERVAL_SECONDS = 10

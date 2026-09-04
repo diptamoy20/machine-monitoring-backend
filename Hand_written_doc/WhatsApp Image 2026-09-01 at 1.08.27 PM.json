@@ -1,0 +1,70 @@
+[
+  {
+    "dimension": "15'",
+    "spec": "GI Guide 2 1/2\"",
+    "quantity": "1.5",
+    "unit": "Ton",
+    "notes": "@ 90/-",
+    "confidence": "high"
+  },
+  {
+    "dimension": "16'",
+    "spec": "GI Guide 2 1/2\"",
+    "quantity": "1.5",
+    "unit": "Ton",
+    "notes": "@ 90/-",
+    "confidence": "high"
+  },
+  {
+    "dimension": "17'",
+    "spec": "GI Guide 2 1/2\"",
+    "quantity": "500",
+    "unit": "kg",
+    "notes": "@ 90/-",
+    "confidence": "high"
+  },
+  {
+    "dimension": "18'",
+    "spec": "GI Guide 2 1/2\"",
+    "quantity": "500",
+    "unit": "kg",
+    "notes": "@ 90/-",
+    "confidence": "high"
+  },
+  {
+    "dimension": null,
+    "spec": "GI Bracket Plate",
+    "quantity": "1.5",
+    "unit": "Ton",
+    "notes": "-2kg @90/50",
+    "confidence": "high"
+  },
+  {
+    "dimension": "12\"",
+    "spec": "Spring",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "@ 77/-",
+    "confidence": "high"
+  },
+  {
+    "dimension": "15\"",
+    "spec": "Spring",
+    "quantity": "700",
+    "unit": "kg",
+    "notes": "@ 77/-",
+    "confidence": "high"
+  },
+  {
+    "dimension": "18\"",
+    "spec": "Spring",
+    "quantity": "1.5",
+    "unit": "Ton",
+    "notes": "@ 77/-",
+    "confidence": "high"
+  },
+  {
+    "vendor": "Ashoka Traders Asansol",
+    "date": null
+  }
+]

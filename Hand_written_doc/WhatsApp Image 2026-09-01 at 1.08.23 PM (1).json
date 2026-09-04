@@ -1,0 +1,111 @@
+[
+  {
+    "dimension": "5X8",
+    "spec": "16 গেজ",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4X8",
+    "spec": "16 গেজ",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4X8",
+    "spec": "18 গেজ",
+    "quantity": "30",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3X8",
+    "spec": "18 গেজ",
+    "quantity": "10",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3X6",
+    "spec": "18 গেজ",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3X6",
+    "spec": "20 গেজ",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "19 FT",
+    "spec": "18 গেজ প্রোফাইল",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "20 FT",
+    "spec": "18 গেজ প্রোফাইল",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "21 FT",
+    "spec": "18 গেজ প্রোফাইল",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "19 FT",
+    "spec": "20 গেজ প্রোফাইল",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "17 FT",
+    "spec": "20 গেজ প্রোফাইল",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "16 FT",
+    "spec": "20 গেজ প্রোফাইল",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "15 FT",
+    "spec": "20 গেজ প্রোফাইল",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "summary": true,
+    "vendor": "S.H. ENTERPRISE",
+    "date": null
+  }
+]

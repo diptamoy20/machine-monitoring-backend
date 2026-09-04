@@ -56,7 +56,7 @@ class UtilizationTracker:
         state_to_send = self._build_state_dict()
         url = f"{self.api_base_url}/api/utilization/sync"
         try:
-            response = requests.post(url, json={"data": state_to_send}, timeout=5)
+            response = requests.post(url, json={"data": state_to_send}, timeout=20)
             if response.status_code == 200:
                 print(f"[UTILIZATION SYNCED] {len(state_to_send)} machine(s) -> {url}")
             else:

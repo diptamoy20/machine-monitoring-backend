@@ -56,3 +56,16 @@ def get_label_color(final_label):
         return (0, 0, 255)
     else:  # uncertain
         return (0, 165, 255)
+def crop_polygon(frame, points):
+    """
+    Mask everything outside the polygon (blacked out), then crop tight
+    to the polygon's bounding box. Returns the cropped, masked image.
+    """
+    pts = np.array(points, dtype=np.int32)
+    x, y, w, h = cv2.boundingRect(pts)
+
+    mask = np.zeros(frame.shape[:2], dtype=np.uint8)
+    cv2.fillPoly(mask, [pts], 255)
+    masked = cv2.bitwise_and(frame, frame, mask=mask)
+
+    return masked[y:y+h, x:x+w]

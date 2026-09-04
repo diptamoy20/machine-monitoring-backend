@@ -1,0 +1,39 @@
+[
+  {
+    "dimension": "10'",
+    "spec": "25mm Short, Jindal Panther",
+    "quantity": "150",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "12'",
+    "spec": "25mm Short, Jindal Panther",
+    "quantity": "150",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "14'",
+    "spec": "25mm Short, Jindal Panther",
+    "quantity": "100",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "16'",
+    "spec": "25mm Short, Jindal Panther",
+    "quantity": "100",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "vendor": "A.S Enterprise",
+    "date": "Saturday (শনিবার)",
+    "notes": "107"
+  }
+]

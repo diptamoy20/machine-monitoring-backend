@@ -1,0 +1,134 @@
+[
+  {
+    "dimension": "10'",
+    "spec": "0.45 MM",
+    "quantity": "2",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "12'",
+    "spec": "0.45 MM",
+    "quantity": "2",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "14'",
+    "spec": "0.45 MM",
+    "quantity": "3",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "16'",
+    "spec": "0.45 MM",
+    "quantity": "3",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "18'",
+    "spec": "0.45 MM",
+    "quantity": "3",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "20'",
+    "spec": "0.45 MM",
+    "quantity": "3",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "22'",
+    "spec": "0.45 MM",
+    "quantity": "2",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "24'",
+    "spec": "0.45 MM",
+    "quantity": "2",
+    "unit": "ton",
+    "notes": "Jindal Sabrang - Section 1",
+    "confidence": "high"
+  },
+  {
+    "dimension": "900x2440",
+    "spec": "1.5 MM",
+    "quantity": "5",
+    "unit": "ton",
+    "notes": "Section 1 total: 25 ton",
+    "confidence": "high"
+  },
+  {
+    "dimension": "1220x2440",
+    "spec": "1.5 MM",
+    "quantity": "2",
+    "unit": "ton",
+    "notes": "Section 2",
+    "confidence": "high"
+  },
+  {
+    "dimension": "900x2440",
+    "spec": "1.5 MM",
+    "quantity": "3",
+    "unit": "ton",
+    "notes": "Section 2",
+    "confidence": "high"
+  },
+  {
+    "dimension": "900x1830",
+    "spec": "1.5 MM",
+    "quantity": "3",
+    "unit": "ton",
+    "notes": "Section 2",
+    "confidence": "high"
+  },
+  {
+    "dimension": "2440x1500",
+    "spec": "1.5 MM",
+    "quantity": "2",
+    "unit": "ton",
+    "notes": "Section 2",
+    "confidence": "high"
+  },
+  {
+    "dimension": "1000x1980",
+    "spec": "1.5 MM",
+    "quantity": "2",
+    "unit": "ton",
+    "notes": "Section 2 total: 12 ton",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4",
+    "spec": "",
+    "quantity": "88/00",
+    "unit": "",
+    "notes": "Rate/price note on bottom slip",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3",
+    "spec": "",
+    "quantity": "89/00",
+    "unit": "",
+    "notes": "Rate/price note on bottom slip",
+    "confidence": "high"
+  },
+  {
+    "vendor": "Jindal Sabrang",
+    "date": null
+  }
+]

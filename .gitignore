@@ -9,3 +9,5 @@ app/ml/yolo/weights/*.pt
  
 Trash/ 
 *.zip 
+Tracking_vehicle_movements/
+roi_config.backup_*.json

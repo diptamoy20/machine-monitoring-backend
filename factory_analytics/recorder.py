@@ -1,4 +1,4 @@
-﻿"""
+"""
 Handles ONE-TIME triggered clip recording per machine (per ROI).
 
 Workflow:
@@ -13,6 +13,11 @@ Workflow:
    b) POST  /api/detections              - logs a permanent history event
 4. Only ONE clip+image is saved per machine per video-processing session.
 
+If cam_ip/cam_channel are provided (live RTSP pipeline), both are
+appended to the evidence filename for traceability back to the source
+camera. File-based pipelines that don't pass them keep the original
+filename format unchanged.
+
 REQUIRES: FFmpeg must be installed and accessible on PATH.
 Check with: ffmpeg -version
 """
@@ -26,13 +31,16 @@ from datetime import datetime
 
 
 class ClipRecorder:
-    def __init__(self, detection_dir, final_dir, final_image_dir, record_seconds, api_base_url, machine_id):
+    def __init__(self, detection_dir, final_dir, final_image_dir, record_seconds, api_base_url, machine_id,
+                 cam_ip=None, cam_channel=None):
         self.detection_dir = detection_dir
         self.final_dir = final_dir
         self.final_image_dir = final_image_dir
         self.record_seconds = record_seconds
         self.api_base_url = api_base_url
         self.machine_id = machine_id
+        self.cam_ip = cam_ip
+        self.cam_channel = cam_channel
 
         os.makedirs(self.detection_dir, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
@@ -52,6 +60,10 @@ class ClipRecorder:
         timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
         status_label = status.capitalize()
         base_name = f"{self.machine_id}_{status_label}_{timestamp}"
+
+        if self.cam_ip and self.cam_channel:
+            base_name = f"{base_name}_{self.cam_ip}_{self.cam_channel}"
+
         video_temp_path = os.path.join(self.detection_dir, base_name + ".mp4")
         video_final_path = os.path.join(self.final_dir, base_name + ".mp4")
         image_final_path = os.path.join(self.final_image_dir, base_name + ".jpg")
@@ -175,7 +187,7 @@ class ClipRecorder:
 
         patch_url = f"{self.api_base_url}/api/machines/{self.machine_id}"
         try:
-            response = requests.patch(patch_url, json=patch_payload, timeout=5)
+            response = requests.patch(patch_url, json=patch_payload, timeout=20)
             if response.status_code == 200:
                 print(f"[API UPDATED] {self.machine_id} -> {patch_payload}")
             else:
@@ -191,10 +203,11 @@ class ClipRecorder:
         }
         history_url = f"{self.api_base_url}/api/detections"
         try:
-            response = requests.post(history_url, json=history_payload, timeout=5)
+            response = requests.post(history_url, json=history_payload, timeout=20)
             if response.status_code == 201:
                 print(f"[HISTORY LOGGED] {self.machine_id} -> {history_payload}")
             else:
                 print(f"[HISTORY LOG FAILED] {self.machine_id} {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"[HISTORY LOG ERROR] {self.machine_id} could not reach API: {e}")
+

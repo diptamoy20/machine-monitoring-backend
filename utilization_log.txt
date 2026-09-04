@@ -1,0 +1,6 @@
+MC-001_2026-09-04_16-01-36_Runtime:6.922h_IdleTime:3.777h_Downtime:0.083h_TotalAvailableTime:10.783h (10h 46m 58s)_Utilization:64.2%
+MC-002_2026-09-04_16-01-36_Runtime:1.037h_IdleTime:6.01h_Downtime:3.734h_TotalAvailableTime:10.781h (10h 46m 53s)_Utilization:9.62%
+MC-003_2026-09-04_16-01-36_Runtime:6.788h_IdleTime:3.933h_Downtime:0.057h_TotalAvailableTime:10.778h (10h 46m 41s)_Utilization:62.98%
+MC-004_2026-09-04_16-01-36_Runtime:3.117h_IdleTime:4.847h_Downtime:0.001h_TotalAvailableTime:7.965h (7h 57m 53s)_Utilization:39.13%
+MC-005_2026-09-04_16-01-36_Runtime:0.165h_IdleTime:6.895h_Downtime:0.007h_TotalAvailableTime:7.067h (7h 4m 2s)_Utilization:2.33%
+MC-006_2026-09-04_16-01-36_Runtime:0.197h_IdleTime:6.809h_Downtime:0.062h_TotalAvailableTime:7.067h (7h 4m 2s)_Utilization:2.78%

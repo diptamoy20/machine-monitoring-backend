@@ -1,0 +1,110 @@
+[
+  {
+    "dimension": "5X8",
+    "spec": "16 Gauge",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4X8",
+    "spec": "16 Gauge",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4X8",
+    "spec": "18 Gauge",
+    "quantity": "30",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3X8",
+    "spec": "18 Gauge",
+    "quantity": "10",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3X6",
+    "spec": "18 Gauge",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3X6",
+    "spec": "20 Gauge",
+    "quantity": "20",
+    "unit": "pc",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "19 FT",
+    "spec": "18 Gauge Profile",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "20 FT",
+    "spec": "18 Gauge Profile",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "21 FT",
+    "spec": "18 Gauge Profile",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "19 FT",
+    "spec": "20 Gauge Profile",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "17 FT",
+    "spec": "20 Gauge Profile",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "16 FT",
+    "spec": "20 Gauge Profile",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "dimension": "15 FT",
+    "spec": "20 Gauge Profile",
+    "quantity": "300",
+    "unit": "kg",
+    "notes": "",
+    "confidence": "high"
+  },
+  {
+    "vendor": "S.H. ENTERPRISE",
+    "date": null
+  }
+]

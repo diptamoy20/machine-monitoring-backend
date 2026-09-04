@@ -1,0 +1,57 @@
+[
+  {
+    "dimension": "17 ft",
+    "spec": "22 Gauge Profile",
+    "quantity": "60",
+    "unit": "pcs",
+    "notes": "First batch item",
+    "confidence": "high"
+  },
+  {
+    "dimension": "12 ft",
+    "spec": "22 Gauge Profile",
+    "quantity": "60",
+    "unit": "pcs",
+    "notes": "Second batch item",
+    "confidence": "high"
+  },
+  {
+    "dimension": "20 ft",
+    "spec": "22 Gauge Profile",
+    "quantity": "60",
+    "unit": "pcs",
+    "notes": "Third batch item",
+    "confidence": "high"
+  },
+  {
+    "dimension": "18 ft",
+    "spec": "22 Gauge Profile",
+    "quantity": "60",
+    "unit": "pcs",
+    "notes": "Fourth batch item",
+    "confidence": "high"
+  },
+  {
+    "dimension": "16 ft, 19 ft, 22 ft",
+    "spec": "22 Gauge Profile",
+    "quantity": null,
+    "unit": null,
+    "notes": "Balance items - quantities not specified",
+    "confidence": "high"
+  },
+  {
+    "dimension": null,
+    "spec": "22 Gauge Profile",
+    "quantity": "1.5",
+    "unit": "tons",
+    "notes": "Total Quantity for entire order",
+    "confidence": "high"
+  },
+  {
+    "vendor": "New Metal Industries, 158/4 Belilious Road, Howrah-1",
+    "date": "31.8.26",
+    "gstin": "19AACFN3428K1Z3",
+    "signatory": "Partner",
+    "ref_no": null
+  }
+]

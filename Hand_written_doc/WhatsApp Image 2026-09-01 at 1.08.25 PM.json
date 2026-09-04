@@ -1,0 +1,126 @@
+[
+  {
+    "dimension": "1m x 2m",
+    "spec": "184 / JSW G-I",
+    "quantity": "40",
+    "unit": "pcs",
+    "notes": "Weight: 720 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3 x 6 1/2",
+    "spec": "184 / JSW G-I",
+    "quantity": "40",
+    "unit": "pcs",
+    "notes": "Weight: 600 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4 x 6",
+    "spec": "184 / JSW G-I",
+    "quantity": "20",
+    "unit": "pcs",
+    "notes": "Weight: 400 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4 x 6",
+    "spec": "204 / JSW G-I",
+    "quantity": "20",
+    "unit": "pcs",
+    "notes": "Weight: 340 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4 x 8",
+    "spec": "164 / JSW G-I",
+    "quantity": "20",
+    "unit": "pcs",
+    "notes": "Weight: 700 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3 x 6",
+    "spec": "184.I / JSW Gr-2",
+    "quantity": "30",
+    "unit": "pcs",
+    "notes": "Weight: 450 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4 x 8",
+    "spec": "204 / JSW Gr-2",
+    "quantity": "30",
+    "unit": "pcs",
+    "notes": "Weight: 670 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "3 x 8",
+    "spec": "144 / JSW Gr-2",
+    "quantity": "15",
+    "unit": "pcs",
+    "notes": "Weight: 500 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "4 x 8",
+    "spec": "144 / JSW Gr-2",
+    "quantity": "5",
+    "unit": "pcs",
+    "notes": "Weight: 250 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "2/15",
+    "spec": "Spring",
+    "quantity": "20",
+    "unit": "pcs",
+    "notes": "Combined spring weight: 300 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "2/18",
+    "spec": "Spring",
+    "quantity": "40",
+    "unit": "pcs",
+    "notes": "Combined spring weight: 300 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "2.5",
+    "spec": "G plate acid",
+    "quantity": "400",
+    "unit": "kg",
+    "notes": "Weight: 400 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "18 mt",
+    "spec": "Flat profile (Seil) 1mm",
+    "quantity": "80",
+    "unit": "pcs",
+    "notes": "Combined profile weight: 1030 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "17 mt",
+    "spec": "Flat profile (Seil) 1mm",
+    "quantity": "40",
+    "unit": "pcs",
+    "notes": "Combined profile weight: 1030 kg",
+    "confidence": "high"
+  },
+  {
+    "dimension": "20 mt",
+    "spec": "Flat profile (Seil) 1mm",
+    "quantity": "50",
+    "unit": "pcs",
+    "notes": "Combined profile weight: 1030 kg",
+    "confidence": "high"
+  },
+  {
+    "vendor": "JSW",
+    "date": null
+  }
+]
