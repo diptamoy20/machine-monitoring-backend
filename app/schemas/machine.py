@@ -10,6 +10,8 @@ class MachineBase(BaseModel):
     video_url: Optional[str] = Field(None, description="The URL of the machine video")
     status: StatusEnum = Field(..., description="The running status of the machine (running, standby, stop)")
     detected_at: Optional[datetime] = Field(None, description="Exact timestamp the current evidence video was generated")
+    camera_status: str = Field(..., description="The status of the camera")
+
 
 class MachineCreate(MachineBase):
     mc_id: str = Field(..., description="The unique machine ID (e.g., MC-001)")
@@ -20,6 +22,7 @@ class MachineUpdate(BaseModel):
     video_url: Optional[str] = Field(None, description="The URL of the machine video")
     status: Optional[StatusEnum] = Field(None, description="The running status of the machine (running, standby, stop)")
     detected_at: Optional[datetime] = Field(None, description="Exact timestamp the current evidence video was generated")
+    camera_status: Optional[str] = Field(None, description="The status of the camera")
 
 class MachineResponse(MachineBase):
     id: int
@@ -43,4 +46,5 @@ class MachineUtilizationResponse(BaseModel):
     idle_time: float = Field(..., description="Idle time in hours")
     downtime: float = Field(..., description="Downtime in hours")
     total_available_time: float = Field(..., description="Total available time in hours (Runtime + Idle Time + Downtime)")
-    utilization: float = Field(..., description="Utilization percentage (Runtime / Total Available Time * 100)")
+    utilization: float = Field(..., description="Utilization percentage (Runtime / Total Available Time * 100)")
+    image_url: Optional[str] = Field(None, description="The URL of the machine image")

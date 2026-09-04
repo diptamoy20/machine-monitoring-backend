@@ -22,7 +22,8 @@ def create_machine(db: Session, machine: MachineCreate):
         name=machine.name,
         image_url=machine.image_url,
         video_url=machine.video_url,
-        status=machine.status
+        status=machine.status,
+        camera_status=machine.camera_status
     )
     db.add(db_machine)
     try:

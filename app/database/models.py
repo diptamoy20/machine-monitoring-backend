@@ -12,7 +12,7 @@ class MachineStatus(Base):
     video_url = Column(String, nullable=True)
     status = Column(String, nullable=False)
     detected_at = Column(DateTime(timezone=True), nullable=True)
-
+    camera_status = Column(String, nullable=False, default="offline")
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 

@@ -17,6 +17,7 @@ try:
     with engine.begin() as conn:
         conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS video_url VARCHAR;"))
         conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS detected_at TIMESTAMPTZ;"))
+        conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS camera_status VARCHAR DEFAULT 'offline';"))
     logger.info("Tables created or verified successfully.")
 except Exception as e:
     logger.error("Failed to create tables. Database might be unreachable.")
