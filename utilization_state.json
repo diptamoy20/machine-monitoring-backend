@@ -1,50 +1,50 @@
 {
   "MC-001": {
-    "runtime": 24920.0,
+    "runtime": 26544.0,
     "downtime": 300.0,
-    "idle": 13598.0,
-    "total_available_time": 38818.0,
-    "total_available_time_formatted": "10h 46m 58s",
-    "utilization_percent": 64.2
+    "idle": 14494.0,
+    "total_available_time": 41338.0,
+    "total_available_time_formatted": "11h 28m 58s",
+    "utilization_percent": 64.21
   },
   "MC-002": {
-    "runtime": 3733.0,
-    "downtime": 13444.0,
-    "idle": 21636.0,
-    "total_available_time": 38813.0,
-    "total_available_time_formatted": "10h 46m 53s",
+    "runtime": 3978.0,
+    "downtime": 13880.0,
+    "idle": 23475.0,
+    "total_available_time": 41333.0,
+    "total_available_time_formatted": "11h 28m 53s",
     "utilization_percent": 9.62
   },
   "MC-003": {
-    "runtime": 24437.0,
-    "downtime": 204.0,
-    "idle": 14160.0,
-    "total_available_time": 38801.0,
-    "total_available_time_formatted": "10h 46m 41s",
-    "utilization_percent": 62.98
+    "runtime": 25977.0,
+    "downtime": 208.0,
+    "idle": 15136.0,
+    "total_available_time": 41321.0,
+    "total_available_time_formatted": "11h 28m 41s",
+    "utilization_percent": 62.87
   },
   "MC-004": {
-    "runtime": 11220.0,
+    "runtime": 13278.0,
     "downtime": 5.0,
-    "idle": 17448.0,
-    "total_available_time": 28673.0,
-    "total_available_time_formatted": "7h 57m 53s",
-    "utilization_percent": 39.13
+    "idle": 17910.0,
+    "total_available_time": 31193.0,
+    "total_available_time_formatted": "8h 39m 53s",
+    "utilization_percent": 42.57
   },
   "MC-005": {
-    "runtime": 593.0,
-    "downtime": 27.0,
-    "idle": 24822.0,
-    "total_available_time": 25442.0,
-    "total_available_time_formatted": "7h 4m 2s",
-    "utilization_percent": 2.33
+    "runtime": 2544.0,
+    "downtime": 238.0,
+    "idle": 25180.0,
+    "total_available_time": 27962.0,
+    "total_available_time_formatted": "7h 46m 2s",
+    "utilization_percent": 9.1
   },
   "MC-006": {
-    "runtime": 708.0,
-    "downtime": 223.0,
-    "idle": 24511.0,
-    "total_available_time": 25442.0,
-    "total_available_time_formatted": "7h 4m 2s",
-    "utilization_percent": 2.78
+    "runtime": 726.0,
+    "downtime": 2634.0,
+    "idle": 24602.0,
+    "total_available_time": 27962.0,
+    "total_available_time_formatted": "7h 46m 2s",
+    "utilization_percent": 2.6
   }
 }
