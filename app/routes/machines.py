@@ -42,6 +42,8 @@ def get_utilization_state(
     if from_date:
         query = query.filter(MachineStatus.detected_at >= from_date)
     if to_date:
+        if to_date.time() == datetime.min.time():
+            to_date = to_date.replace(hour=23, minute=59, second=59, microsecond=999999)
         query = query.filter(MachineStatus.detected_at <= to_date)
 
     machine_statuses = query.all()
