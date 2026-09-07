@@ -44,7 +44,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host "=== 6. Triggering server deployment ===" -ForegroundColor Cyan
 Write-Host "You will be prompted for the server password." -ForegroundColor Yellow
-ssh $ServerHost -p $ServerPort "cd $ServerProjectDir && bash deploy.sh"
+ssh -t $ServerHost -p $ServerPort "cd $ServerProjectDir && bash deploy.sh"
 
 Write-Host "=== DONE ===" -ForegroundColor Green
 Write-Host "Reminder: this script does NOT sync app/static/images or app/static/videos." -ForegroundColor Yellow
