@@ -2,16 +2,22 @@
 Handles ONE-TIME triggered clip recording per machine (per ROI).
 
 Workflow:
-1. Records a single 30-second clip into DETECTION_DIR on the first confident
-   running/stopped detection for this machine. Also saves a JPEG snapshot
-   of the triggering frame at the same moment.
-2. The video is transcoded to H.264 and moved into FINAL_DIR.
+1. Records a clip into DETECTION_DIR on the first confident running/stopped
+   detection for this machine. Also saves a JPEG snapshot of the triggering
+   frame at the same moment.
+2. Recording is capped by WALL-CLOCK TIME (record_seconds), not frame count -
+   this guarantees a clip always finishes in bounded real time even if the
+   server can't sustain the target fps (e.g. slow CPU inference across
+   multiple ROIs). The actual achieved fps is computed from frames_written /
+   elapsed_time and passed to ffmpeg during transcoding, so the final video's
+   playback speed reflects real time rather than looking sped up.
+3. The video is transcoded to H.264 and moved into FINAL_DIR.
    The image is saved directly into FINAL_IMAGE_DIR (no transcoding needed).
-3. Notifies the API in TWO ways, but ONLY if the final video file is
+4. Notifies the API in TWO ways, but ONLY if the final video file is
    confirmed to exist on disk:
    a) PATCH /api/machines/{machine_id}   - updates status, video_url, image_url
    b) POST  /api/detections              - logs a permanent history event
-4. Only ONE clip+image is saved per machine per video-processing session.
+5. Only ONE clip+image is saved per machine per video-processing session.
 
 If cam_ip/cam_channel are provided (live RTSP pipeline), both are
 appended to the evidence filename for traceability back to the source
@@ -24,6 +30,7 @@ Check with: ffmpeg -version
 
 import cv2
 import os
+import time
 import shutil
 import subprocess
 import requests
@@ -50,7 +57,8 @@ class ClipRecorder:
         self.already_saved = False
         self.writer = None
         self.frames_written = 0
-        self.frames_target = 0
+        self.declared_fps = None
+        self.start_time = None
         self.filename = None
         self.final_path = None
         self.image_path = None
@@ -85,28 +93,43 @@ class ClipRecorder:
 
             h, w = frame.shape[:2]
             fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+            self.declared_fps = fps
             self.writer = cv2.VideoWriter(self.filename, fourcc, fps, (w, h))
-            self.frames_target = int(round(fps * self.record_seconds))
+            self.start_time = time.time()
             self.recording = True
             self.frames_written = 0
             print(f"[RECORDING STARTED] {self.machine_id} status={status} -> {self.filename} "
-                  f"({self.frames_target} frames)")
+                  f"(target: {self.record_seconds}s wall-clock)")
 
     def write_if_recording(self, frame):
         if not self.recording:
             return
         self.writer.write(frame)
         self.frames_written += 1
-        if self.frames_written >= self.frames_target:
+
+        elapsed = time.time() - self.start_time
+        if elapsed >= self.record_seconds:
             self.stop(early=False)
+
+    def force_stop_if_recording(self):
+        """Immediately finalize an in-progress recording, e.g. on stream disconnect,
+        so it never spans across a reconnect gap."""
+        if self.recording:
+            print(f"[RECORDING FORCE-STOPPED] {self.machine_id} - stream disconnected mid-recording")
+            self.stop(early=True)
 
     def stop(self, early=True):
         if self.recording and self.writer is not None:
+            elapsed = time.time() - self.start_time if self.start_time else 0
+            actual_fps = (self.frames_written / elapsed) if elapsed > 0 else self.declared_fps
+            actual_fps = max(1.0, actual_fps)  # never pass 0/negative fps to ffmpeg
+
             self.writer.release()
             tag = " - video ended early" if early else ""
-            print(f"[RECORDING FINISHED{tag}] {self.machine_id} -> {self.filename}")
+            print(f"[RECORDING FINISHED{tag}] {self.machine_id} -> {self.filename} "
+                  f"({self.frames_written} frames in {elapsed:.1f}s, actual_fps={actual_fps:.2f})")
 
-            transcoded = self._transcode_to_h264(self.filename, self.final_path)
+            transcoded = self._transcode_to_h264(self.filename, self.final_path, actual_fps)
 
             if transcoded:
                 print(f"[TRANSCODED] {self.machine_id} -> {self.final_path}")
@@ -135,9 +158,11 @@ class ClipRecorder:
         self.recording = False
         self.writer = None
 
-    def _transcode_to_h264(self, input_path, output_path):
-        cmd = [
-            "ffmpeg", "-y",
+    def _transcode_to_h264(self, input_path, output_path, input_fps=None):
+        cmd = ["ffmpeg", "-y"]
+        if input_fps:
+            cmd += ["-r", str(round(input_fps, 2))]
+        cmd += [
             "-i", input_path,
             "-c:v", "libx264",
             "-preset", "fast",
@@ -210,4 +235,3 @@ class ClipRecorder:
                 print(f"[HISTORY LOG FAILED] {self.machine_id} {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"[HISTORY LOG ERROR] {self.machine_id} could not reach API: {e}")
-
