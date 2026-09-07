@@ -1,8 +1,9 @@
 import json
+from datetime import datetime
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from app.database.connection import get_db
 from app.database.models import MachineStatus
 from app.schemas.machine import MachineResponse, MachineCreate, MachineUpdate
@@ -22,18 +23,38 @@ def get_machines(db: Session = Depends(get_db)):
 
 
 @router.get("/utilization/state", summary="Get raw utilization data from JSON file")
-def get_utilization_state(db: Session = Depends(get_db)):
+def get_utilization_state(
+    from_date: Optional[datetime] = Query(None, alias="from", description="Start date for filtering by detected_at"),
+    to_date: Optional[datetime] = Query(None, alias="to", description="End date for filtering by detected_at"),
+    db: Session = Depends(get_db)
+):
     """
     Read utilization_state.json and enrich each machine's entry with its
-    current image_url from the database.
+    current image_url from the database. Filter by detected_at range if provided.
     """
     if not UTILIZATION_STATE_PATH.exists():
         raise HTTPException(status_code=404, detail=f"utilization_state.json not found at {UTILIZATION_STATE_PATH}")
     with open(UTILIZATION_STATE_PATH, "r") as f:
         data = json.load(f)
 
-    machine_statuses = db.query(MachineStatus).all()
+    query = db.query(MachineStatus)
+    
+    if from_date:
+        query = query.filter(MachineStatus.detected_at >= from_date)
+    if to_date:
+        query = query.filter(MachineStatus.detected_at <= to_date)
+
+    machine_statuses = query.all()
     image_map = {ms.mc_id: ms.image_url for ms in machine_statuses}
+    
+    if from_date or to_date:
+        filtered_data = {}
+        for mc_id, stats in data.items():
+            if mc_id in image_map and isinstance(stats, dict):
+                stats["image_url"] = image_map.get(mc_id)
+                filtered_data[mc_id] = stats
+        return filtered_data
+
     for mc_id, stats in data.items():
         if isinstance(stats, dict):
             stats["image_url"] = image_map.get(mc_id)
