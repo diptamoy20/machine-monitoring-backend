@@ -4,7 +4,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$ProjectDir = "D:\projct_demo"
+$ProjectDir = $PSScriptRoot
 $ServerHost = "beasapps@192.168.1.28"
 $ServerPort = "5143"
 $ServerProjectDir = "/var/www/stage.beas.in/public_html/machine-monitoring-opencv"
