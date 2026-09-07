@@ -35,7 +35,7 @@ Write-Host "=== 4. Committing ===" -ForegroundColor Cyan
 git commit -m "$Message"
 
 Write-Host "=== 5. Pushing to master ===" -ForegroundColor Cyan
-git push origin feature/specific-code:master
+git push origin HEAD:master
 if ($LASTEXITCODE -ne 0) {
     Write-Host "PUSH FAILED. Common causes tonight: large file (>100MB), diverged branch." -ForegroundColor Red
     Write-Host "Check the error above and resolve manually - do not force push blindly." -ForegroundColor Red
