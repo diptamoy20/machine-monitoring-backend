@@ -1,31 +1,21 @@
 """
-Handles ONE-TIME triggered clip recording per machine (per ROI).
+Handles TRIGGERED clip recording per machine (per ROI), for a
+continuously-running live pipeline.
 
-Workflow:
-1. Records a clip into DETECTION_DIR on the first confident running/stopped
-   detection for this machine. Also saves a JPEG snapshot of the triggering
-   frame at the same moment.
-2. Recording is capped by WALL-CLOCK TIME (record_seconds), not frame count -
-   this guarantees a clip always finishes in bounded real time even if the
-   server can't sustain the target fps (e.g. slow CPU inference across
-   multiple ROIs). The actual achieved fps is computed from frames_written /
-   elapsed_time and passed to ffmpeg during transcoding, so the final video's
-   playback speed reflects real time rather than looking sped up.
-3. The video is transcoded to H.264 and moved into FINAL_DIR.
-   The image is saved directly into FINAL_IMAGE_DIR (no transcoding needed).
-4. Notifies the API in TWO ways, but ONLY if the final video file is
-   confirmed to exist on disk:
-   a) PATCH /api/machines/{machine_id}   - updates status, video_url, image_url
-   b) POST  /api/detections              - logs a permanent history event
-5. Only ONE clip+image is saved per machine per video-processing session.
+Re-arming logic (important for long-running services):
+A machine captures fresh evidence (snapshot + video) when:
+  1. It's the very first detection since the process started, OR
+  2. Its status has genuinely CHANGED since the last capture
+     (running -> stopped or stopped -> running), OR
+  3. RECAPTURE_INTERVAL_SECONDS has elapsed since the last capture,
+     even if status hasn't changed (a periodic "still alive, here's
+     current footage" safety net).
 
-If cam_ip/cam_channel are provided (live RTSP pipeline), both are
-appended to the evidence filename for traceability back to the source
-camera. File-based pipelines that don't pass them keep the original
-filename format unchanged.
+Recording is capped by WALL-CLOCK TIME (record_seconds), not frame
+count. Actual achieved fps is computed and passed to ffmpeg so
+playback speed reflects real time.
 
 REQUIRES: FFmpeg must be installed and accessible on PATH.
-Check with: ffmpeg -version
 """
 
 import cv2
@@ -36,10 +26,12 @@ import subprocess
 import requests
 from datetime import datetime
 
+RECAPTURE_INTERVAL_SECONDS = 1800  # 30 minutes
+
 
 class ClipRecorder:
     def __init__(self, detection_dir, final_dir, final_image_dir, record_seconds, api_base_url, machine_id,
-                 cam_ip=None, cam_channel=None):
+                 cam_ip=None, cam_channel=None, recapture_interval_seconds=RECAPTURE_INTERVAL_SECONDS):
         self.detection_dir = detection_dir
         self.final_dir = final_dir
         self.final_image_dir = final_image_dir
@@ -48,13 +40,13 @@ class ClipRecorder:
         self.machine_id = machine_id
         self.cam_ip = cam_ip
         self.cam_channel = cam_channel
+        self.recapture_interval_seconds = recapture_interval_seconds
 
         os.makedirs(self.detection_dir, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
         os.makedirs(self.final_image_dir, exist_ok=True)
 
         self.recording = False
-        self.already_saved = False
         self.writer = None
         self.frames_written = 0
         self.declared_fps = None
@@ -62,6 +54,9 @@ class ClipRecorder:
         self.filename = None
         self.final_path = None
         self.image_path = None
+
+        self.last_captured_status = None
+        self.last_captured_time = None
 
     def _generate_filenames(self, status):
         now = datetime.now()
@@ -77,29 +72,48 @@ class ClipRecorder:
         image_final_path = os.path.join(self.final_image_dir, base_name + ".jpg")
         return video_temp_path, video_final_path, image_final_path, base_name
 
+    def _should_capture(self, status):
+        if self.last_captured_status is None:
+            return True
+
+        if status != self.last_captured_status:
+            return True
+
+        elapsed_since_last = time.time() - self.last_captured_time
+        if elapsed_since_last >= self.recapture_interval_seconds:
+            return True
+
+        return False
+
     def maybe_start(self, frame, fps, should_trigger, status):
-        if self.already_saved or self.recording:
+        if self.recording or not should_trigger:
             return
 
-        if should_trigger:
-            self.filename, self.final_path, self.image_path, base_name = self._generate_filenames(status)
+        if not self._should_capture(status):
+            return
 
-            try:
-                cv2.imwrite(self.image_path, frame)
-                print(f"[SNAPSHOT SAVED] {self.machine_id} -> {self.image_path}")
-            except Exception as e:
-                print(f"[SNAPSHOT FAILED] {self.machine_id} could not save image: {e}")
-                self.image_path = None
+        self.filename, self.final_path, self.image_path, base_name = self._generate_filenames(status)
 
-            h, w = frame.shape[:2]
-            fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-            self.declared_fps = fps
-            self.writer = cv2.VideoWriter(self.filename, fourcc, fps, (w, h))
-            self.start_time = time.time()
-            self.recording = True
-            self.frames_written = 0
-            print(f"[RECORDING STARTED] {self.machine_id} status={status} -> {self.filename} "
-                  f"(target: {self.record_seconds}s wall-clock)")
+        try:
+            cv2.imwrite(self.image_path, frame)
+            print(f"[SNAPSHOT SAVED] {self.machine_id} -> {self.image_path}")
+        except Exception as e:
+            print(f"[SNAPSHOT FAILED] {self.machine_id} could not save image: {e}")
+            self.image_path = None
+
+        h, w = frame.shape[:2]
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        self.declared_fps = fps
+        self.writer = cv2.VideoWriter(self.filename, fourcc, fps, (w, h))
+        self.start_time = time.time()
+        self.recording = True
+        self.frames_written = 0
+
+        self.last_captured_status = status
+        self.last_captured_time = time.time()
+
+        print(f"[RECORDING STARTED] {self.machine_id} status={status} -> {self.filename} "
+              f"(target: {self.record_seconds}s wall-clock)")
 
     def write_if_recording(self, frame):
         if not self.recording:
@@ -112,8 +126,6 @@ class ClipRecorder:
             self.stop(early=False)
 
     def force_stop_if_recording(self):
-        """Immediately finalize an in-progress recording, e.g. on stream disconnect,
-        so it never spans across a reconnect gap."""
         if self.recording:
             print(f"[RECORDING FORCE-STOPPED] {self.machine_id} - stream disconnected mid-recording")
             self.stop(early=True)
@@ -122,7 +134,7 @@ class ClipRecorder:
         if self.recording and self.writer is not None:
             elapsed = time.time() - self.start_time if self.start_time else 0
             actual_fps = (self.frames_written / elapsed) if elapsed > 0 else self.declared_fps
-            actual_fps = max(1.0, actual_fps)  # never pass 0/negative fps to ffmpeg
+            actual_fps = max(1.0, actual_fps)
 
             self.writer.release()
             tag = " - video ended early" if early else ""
@@ -150,10 +162,7 @@ class ClipRecorder:
             if self.filename and os.path.exists(self.filename):
                 self._notify_api()
             else:
-                print(f"[API UPDATE SKIPPED] {self.machine_id} - no valid file to reference, "
-                      f"database was NOT updated with a broken video_url")
-
-            self.already_saved = True
+                print(f"[API UPDATE SKIPPED] {self.machine_id} - no valid file to reference")
 
         self.recording = False
         self.writer = None
