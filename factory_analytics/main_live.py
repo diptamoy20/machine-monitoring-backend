@@ -42,6 +42,8 @@ import time
 import numpy as np
 import requests
 import multiprocessing
+import signal
+import sys
 from datetime import datetime
 from ultralytics import YOLO
 
@@ -88,6 +90,10 @@ def set_camera_status(shared_camera_status, channel_key, cam_ip, status):
 
 
 def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
+    def handle_sigterm(signum, frame):
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
     channel_key = channel_key_from_url(url)
     cam_ip = cam_ip_from_url(url)
 
@@ -139,6 +145,8 @@ def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
             if not ret:
                 print(f"[{channel_key}] Lost connection. Reconnecting...")
                 set_camera_status(shared_camera_status, channel_key, cam_ip, "offline")
+                for recorder in recorders.values():
+                    recorder.force_stop_if_recording()
                 cap.release()
                 cap = None
                 time.sleep(config.RTSP_RECONNECT_DELAY_SECONDS)
@@ -258,6 +266,11 @@ def update_camera_status_for_machines(shared_camera_status, machine_to_channels)
 
 
 def main():
+    def handle_sigterm(signum, frame):
+        print("Received SIGTERM, shutting down gracefully...")
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, handle_sigterm)
+
     manager = multiprocessing.Manager()
     shared_observations = manager.dict()
     shared_camera_status = manager.dict()

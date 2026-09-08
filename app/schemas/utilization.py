@@ -13,7 +13,6 @@ class MachineUtilizationItem(BaseModel):
 
 
 class UtilizationSyncRequest(BaseModel):
-    """Body shape sent by UtilizationTracker._notify_api() - mirrors utilization_state.json exactly."""
     data: Dict[str, MachineUtilizationItem]
 
 
@@ -29,3 +28,12 @@ class MachineUtilizationDBResponse(BaseModel):
     image_url: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class UtilizationHistoryItem(BaseModel):
+    mc_id: str
+    runtime_seconds: float
+    downtime_seconds: float
+    idle_seconds: float
+    total_seconds: float
+    utilization_percent: float
