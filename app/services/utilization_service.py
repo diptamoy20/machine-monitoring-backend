@@ -6,13 +6,19 @@ from app.schemas.utilization import UtilizationSyncRequest
 logger = logging.getLogger(__name__)
 
 
+from datetime import datetime, timezone
+
 def sync_utilization(db: Session, payload: UtilizationSyncRequest):
     """Upsert one row per machine - overwrite, never insert duplicates."""
     updated = []
+    current_date = datetime.now(timezone.utc).date()
     for mc_id, item in payload.data.items():
-        row = db.query(MachineUtilization).filter(MachineUtilization.mc_id == mc_id).first()
+        row = db.query(MachineUtilization).filter(
+            MachineUtilization.mc_id == mc_id,
+            MachineUtilization.date == current_date
+        ).first()
         if row is None:
-            row = MachineUtilization(mc_id=mc_id)
+            row = MachineUtilization(mc_id=mc_id, date=current_date)
             db.add(row)
 
         row.runtime = item.runtime

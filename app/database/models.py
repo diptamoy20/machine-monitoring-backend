@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, Integer, String, DateTime, Float
+from sqlalchemy import Column, Integer, String, DateTime, Float, Date
 from app.database.connection import Base
 
 class MachineStatus(Base):
@@ -36,13 +36,15 @@ class DetectionEvent(Base):
 
 class MachineUtilization(Base):
     """
-    Current utilization snapshot per machine, overwritten on every sync
-    from the Python detection pipeline (mirrors MachineStatus's
-    current-state-only pattern, not a history log).
+    One row per machine per calendar day. Accumulated from the detection
+    pipeline via /api/utilization/sync. Each day's bucket builds up live
+    throughout that day. Previous days are frozen and preserved.
     """
     __tablename__ = "machine_utilization"
 
-    mc_id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    mc_id = Column(String, index=True, nullable=False)
+    date = Column(Date, default=lambda: datetime.datetime.now(datetime.timezone.utc).date(), nullable=False)
     runtime = Column(Float, nullable=False, default=0.0)
     downtime = Column(Float, nullable=False, default=0.0)
     idle = Column(Float, nullable=False, default=0.0)
