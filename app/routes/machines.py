@@ -141,11 +141,9 @@ def download_utilization_excel(
     headers = [
         "Date",
         "Machine ID",
-        "Runtime (HH:MM:SS)",
         "Idle Time (HH:MM:SS)",
-        "Downtime (HH:MM:SS)",
-        "Total Available Time",
-        "Utilization (%)",
+        "Runtime (HH:MM:SS)",
+        "Downtime (HH:MM:SS)"
     ]
 
     # Write header row
@@ -170,12 +168,9 @@ def download_utilization_excel(
         values = [
             str(row.date),
             row.mc_id,
-            _seconds_to_hhmmss(row.runtime),
             _seconds_to_hhmmss(row.idle),
-            _seconds_to_hhmmss(row.downtime),
-            # "Total Available Time (s)" column removed by user
-            row.total_available_time_formatted or "",
-            round(row.utilization_percent, 2),
+            _seconds_to_hhmmss(row.runtime),
+            _seconds_to_hhmmss(row.downtime)
         ]
         for col_idx, value in enumerate(values, start=1):
             cell = ws.cell(row=row_idx, column=col_idx, value=value)
