@@ -149,8 +149,9 @@ def download_utilization_excel(
         cell.alignment   = center_align
         cell.border      = thin_border
 
-    # Freeze header row
+    # Freeze header row and enable column AutoFilter dropdowns
     ws.freeze_panes = "A2"
+    ws.auto_filter.ref = ws.dimensions  # adds filter arrows to every header column
 
     # Data row styling
     data_font        = Font(name="Calibri", size=10)
