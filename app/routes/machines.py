@@ -83,6 +83,14 @@ def get_utilization_state(
     return response_data
 
 
+def _seconds_to_hhmmss(seconds: float) -> str:
+    """Convert a float of total seconds into a HH:MM:SS string (24-hr format)."""
+    total = int(round(seconds))
+    h = total // 3600
+    m = (total % 3600) // 60
+    s = total % 60
+    return f"{h:02d}:{m:02d}:{s:02d}"
+
 @router.get("/utilization/download", summary="Download KPI utilization data as Excel")
 def download_utilization_excel(
     from_date: Optional[datetime] = Query(None, alias="from", description="Start date (inclusive)"),
@@ -133,10 +141,9 @@ def download_utilization_excel(
     headers = [
         "Date",
         "Machine ID",
-        "Runtime (s)",
-        "Idle Time (s)",
-        "Downtime (s)",
-        "Total Available Time (s)",
+        "Runtime (HH:MM:SS)",
+        "Idle Time (HH:MM:SS)",
+        "Downtime (HH:MM:SS)",
         "Total Available Time",
         "Utilization (%)",
     ]
@@ -163,10 +170,10 @@ def download_utilization_excel(
         values = [
             str(row.date),
             row.mc_id,
-            round(row.runtime, 2),
-            round(row.idle, 2),
-            round(row.downtime, 2),
-            round(row.total_available_time, 2),
+            _seconds_to_hhmmss(row.runtime),
+            _seconds_to_hhmmss(row.idle),
+            _seconds_to_hhmmss(row.downtime),
+            # "Total Available Time (s)" column removed by user
             row.total_available_time_formatted or "",
             round(row.utilization_percent, 2),
         ]
