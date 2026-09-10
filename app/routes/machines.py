@@ -152,7 +152,7 @@ def download_utilization_excel(
     # ── Row 1 : Report title (merged across all columns) ──────────────────────
     title_parts = ["Machines Utilisation Report"]
 
-    # Date range in brackets e.g. (2026-08-01 to 2026-09-08)
+    # Date range appended to title e.g. (2026-08-01 to 2026-09-08)
     if from_date or to_date:
         if from_date and to_date:
             date_str = f"{from_date.date()} to {to_date.date()}"
@@ -161,12 +161,6 @@ def download_utilization_excel(
         else:
             date_str = f"Up to {to_date.date()}"
         title_parts.append(f"({date_str})")
-
-    # Selected machines in brackets e.g. [MC-001, MC-002]
-    if mc_ids and mc_ids.strip().lower() != "all":
-        sel = [mid.strip() for mid in mc_ids.split(",") if mid.strip()]
-        if sel:
-            title_parts.append(f"[{', '.join(sel)}]")
 
     title_font = Font(name="Calibri", bold=True, size=14, color="FFFFFF")
     title_fill = PatternFill(fill_type="solid", fgColor="1F3864")
@@ -178,8 +172,27 @@ def download_utilization_excel(
     title_cell.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[1].height = 28
 
-    # ── Row 2 : Column headers ────────────────────────────────────────────────
-    HEADER_ROW = 2
+    # ── Row 2 (optional) : Selected machines subtitle ─────────────────────────
+    selected_machine_ids = []
+    if mc_ids and mc_ids.strip().lower() != "all":
+        selected_machine_ids = [mid.strip() for mid in mc_ids.split(",") if mid.strip()]
+
+    subtitle_row_used = False
+    if selected_machine_ids:
+        subtitle_font = Font(name="Calibri", italic=True, bold=True, size=10, color="FFFFFF")
+        subtitle_fill = PatternFill(fill_type="solid", fgColor="2E4D8A")   # slightly lighter navy
+
+        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=num_cols)
+        subtitle_cell = ws.cell(row=2, column=1,
+                                value=f"Machines: {', '.join(selected_machine_ids)}")
+        subtitle_cell.font      = subtitle_font
+        subtitle_cell.fill      = subtitle_fill
+        subtitle_cell.alignment = Alignment(horizontal="center", vertical="center")
+        ws.row_dimensions[2].height = 18
+        subtitle_row_used = True
+
+    # ── Column headers ────────────────────────────────────────────────────────
+    HEADER_ROW = 3 if subtitle_row_used else 2
     for col_idx, header in enumerate(headers, start=1):
         cell = ws.cell(row=HEADER_ROW, column=col_idx, value=header)
         cell.font        = header_font
@@ -187,16 +200,16 @@ def download_utilization_excel(
         cell.alignment   = center_align
         cell.border      = thin_border
 
-    # Freeze rows 1+2 so title and headers stay visible while scrolling
-    ws.freeze_panes = "A3"
+    # Freeze all rows above data so title/subtitle/headers stay visible
+    ws.freeze_panes = f"A{HEADER_ROW + 1}"
     ws.auto_filter.ref = f"A{HEADER_ROW}:{get_column_letter(num_cols)}{HEADER_ROW}"
 
     # Data row styling
-    data_font        = Font(name="Calibri", size=10)
-    alt_fill         = PatternFill(fill_type="solid", fgColor="DCE6F1")  # light blue alternate
+    data_font = Font(name="Calibri", size=10)
+    alt_fill  = PatternFill(fill_type="solid", fgColor="DCE6F1")  # light blue alternate
 
-    # Write data rows  (start at row 3 — row 1 = title, row 2 = headers)
-    for row_idx, row in enumerate(rows, start=3):
+    # Write data rows  (immediately after header row)
+    for row_idx, row in enumerate(rows, start=HEADER_ROW + 1):
         fill = alt_fill if row_idx % 2 == 0 else PatternFill()   # alternate row shading
         values = [
             # str(row.date),
