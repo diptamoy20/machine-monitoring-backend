@@ -10,7 +10,7 @@ Entry point. Runs machine status verification across all configured videos:
 - Displays a live overlay window per video
 """
 
-import cv2
+import cv2,
 from ultralytics import YOLO
 
 import config
