@@ -1,7 +1,18 @@
-import cv2
-import time
-import numpy as np
-from rtsp_reader import RtspStreamReader
+﻿"""
+Entry point. Runs machine status verification across all configured videos:
+- Loads/generates ROIs per video, each with a persistent unique machine_id
+- Runs the classifier on each ROI per frame (letterbox + smoothing + confidence floor)
+- Tracks cumulative runtime/downtime/idle time per machine and writes a
+  real-time utilization log (overwritten each time a video finishes)
+- Triggers a one-time 30s clip recording + snapshot image per machine on a
+  confident running/stopped detection, auto-moves both to the static folder,
+  and notifies the API so the machine's live status stays in sync
+- Displays a live overlay window per video
+"""
+
+import cv2,
+from ultralytics import YOLO
+
 import config
 
 CAMERA_INDEX = 1
