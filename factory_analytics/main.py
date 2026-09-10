@@ -1,4 +1,4 @@
-﻿"""
+"""
 Entry point. Runs machine status verification across all configured videos:
 - Loads/generates ROIs per video, each with a persistent unique machine_id
 - Runs the classifier on each ROI per frame (letterbox + smoothing + confidence floor)
