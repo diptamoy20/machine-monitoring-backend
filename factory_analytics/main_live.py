@@ -2,48 +2,21 @@
 Live production pipeline for RTSP camera streams - multi-camera,
 multi-process, with cross-camera observation resolution.
 
-Since the same physical machine can be visible from multiple cameras,
-each camera process only *observes* (does not directly track) machine
-state. Observations are written to a shared, process-safe dictionary.
-A single resolver loop in the main process combines observations per
-machine every second - using the highest-confidence fresh reading -
-before updating the one shared UtilizationTracker and syncing to the
-API. This avoids double-counting and conflicting readings when
-multiple cameras cover the same machine.
+Uses RtspStreamReader (rtsp_reader.py) for adaptive flow control,
+smart protocol self-healing, watchdog, and exponential backoff.
 
-Each machine gets its OWN annotated copy of the frame (only its own
-ROI outline + label drawn on it), so saved snapshots/clips are
-individual evidence per machine. Evidence filenames also include the
-source camera's IP and channel for traceability.
-
-Each camera process also reports its own connection status (online /
-offline / connecting) into a shared dict. The main process periodically
-writes this out to camera_log.json, and also PATCHes each machine's
-camera_status in the database based on whether any camera covering
-that machine is currently online.
-
-Cleanup (releasing the capture, finishing/moving any in-progress
-recordings) runs inside a try/finally, so it always executes even if
-the process is interrupted (e.g. Ctrl+C) mid-frame - preventing
-orphaned files stuck in Detection_temp.
-
-Pipeline per camera process:
-    1. Open the RTSP stream
-    2. Load the ROI (drawn once, ahead of time, via select_roi_rtsp.py)
-    3. Load the YOLO model (own copy, own process, own CPU core)
-    4. Continuously classify, annotate individually, and report observations
-
-Runs forever until Ctrl+C.
+Resolver returns "running", "stopped", or "offline" per machine each
+tick, using real measured wall-clock Δt, feeding directly into
+UtilizationTracker's Runtime/Downtime/Offline calculation.
 """
 
 import cv2
 import json
 import time
+import signal
 import numpy as np
 import requests
 import multiprocessing
-import signal
-import sys
 from datetime import datetime
 from ultralytics import YOLO
 
@@ -53,13 +26,13 @@ from model_utils import letterbox_crop, crop_polygon, LabelSmoother, resolve_fin
 from recorder import ClipRecorder
 from utilization_tracker import UtilizationTracker
 from select_roi_rtsp import channel_key_from_url, cam_ip_from_url
+from rtsp_reader import RtspStreamReader
 
 OBSERVATION_STALE_SECONDS = 3.0
 RESOLVER_TICK_SECONDS = 1.0
 
 
 def draw_roi_annotation(frame, roi, final_label, confidence):
-    """Draw ONLY this machine's ROI outline + label onto the given frame (modifies in place)."""
     color = get_label_color(final_label)
     machine_id = roi["machine_id"]
 
@@ -77,16 +50,36 @@ def draw_roi_annotation(frame, roi, final_label, confidence):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
 
 
+def log_camera_offline_event(channel_key, timestamp):
+    """Append one line per OFFLINE TRANSITION to camera_offline_log.txt."""
+    timestamp_str = timestamp.strftime("%Y-%m-%d_%H-%M-%S")
+    line = f"{timestamp_str}_{channel_key}_offline"
+    try:
+        with open(config.CAMERA_OFFLINE_LOG_PATH, "a") as f:
+            f.write(line + "\n")
+        print(f"[CAMERA OFFLINE LOGGED] {line}")
+    except Exception as e:
+        print(f"[CAMERA OFFLINE LOG ERROR] {e}")
+
+
 def set_camera_status(shared_camera_status, channel_key, cam_ip, status):
-    """Update this camera's status in the shared dict with a timestamp."""
-    now = datetime.now().astimezone().isoformat()
+    """Update this camera's status in the shared dict with a timestamp.
+    Logs a discrete event to camera_offline_log.txt only on the
+    TRANSITION into offline (not on every repeated offline check)."""
+    now = datetime.now().astimezone()
+    now_iso = now.isoformat()
     entry = dict(shared_camera_status.get(channel_key, {}))
+    previous_status = entry.get("status")
+
     entry["cam_ip"] = cam_ip
     entry["status"] = status
-    entry["last_checked"] = now
+    entry["last_checked"] = now_iso
     if status == "online":
-        entry["last_online"] = now
+        entry["last_online"] = now_iso
     shared_camera_status[channel_key] = entry
+
+    if status == "offline" and previous_status != "offline":
+        log_camera_offline_event(channel_key, now)
 
 
 def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
@@ -122,34 +115,35 @@ def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
         for roi in rois
     }
 
-    fps = 25
-    cap = None
+    def on_connect():
+        print(f"[{channel_key}] Connected.")
+        set_camera_status(shared_camera_status, channel_key, cam_ip, "online")
 
+    def on_disconnect():
+        print(f"[{channel_key}] Lost connection - reader is auto-recovering...")
+        set_camera_status(shared_camera_status, channel_key, cam_ip, "offline")
+        for recorder in recorders.values():
+            recorder.force_stop_if_recording()
+
+    print(f"[{channel_key}] Starting RtspStreamReader...")
+    set_camera_status(shared_camera_status, channel_key, cam_ip, "connecting")
+    reader = RtspStreamReader(
+        url,
+        frame_timeout=5.0,
+        on_connect=on_connect,
+        on_disconnect=on_disconnect,
+    )
+    reader.start()
+
+    fps = 25
     print(f"[{channel_key}] Starting detection loop.")
 
     try:
         while not stop_event.is_set():
-            if cap is None or not cap.isOpened():
-                print(f"[{channel_key}] Connecting to stream...")
-                set_camera_status(shared_camera_status, channel_key, cam_ip, "connecting")
-                cap = cv2.VideoCapture(url)
-                if not cap.isOpened():
-                    print(f"[{channel_key}] Connection failed. Retrying in {config.RTSP_RECONNECT_DELAY_SECONDS}s...")
-                    set_camera_status(shared_camera_status, channel_key, cam_ip, "offline")
-                    time.sleep(config.RTSP_RECONNECT_DELAY_SECONDS)
-                    continue
-                print(f"[{channel_key}] Connected.")
-                set_camera_status(shared_camera_status, channel_key, cam_ip, "online")
+            raw_frame = reader.read()
 
-            ret, raw_frame = cap.read()
-            if not ret:
-                print(f"[{channel_key}] Lost connection. Reconnecting...")
-                set_camera_status(shared_camera_status, channel_key, cam_ip, "offline")
-                for recorder in recorders.values():
-                    recorder.force_stop_if_recording()
-                cap.release()
-                cap = None
-                time.sleep(config.RTSP_RECONNECT_DELAY_SECONDS)
+            if raw_frame is None:
+                time.sleep(0.05)
                 continue
 
             for idx, roi in enumerate(rois):
@@ -190,8 +184,7 @@ def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
     finally:
         print(f"[{channel_key}] Cleaning up...")
         set_camera_status(shared_camera_status, channel_key, cam_ip, "offline")
-        if cap:
-            cap.release()
+        reader.stop()
         for recorder in recorders.values():
             recorder.stop(early=True)
         print(f"[{channel_key}] Stopped cleanly.")
@@ -204,23 +197,29 @@ def resolve_machine_states(shared_observations, machine_ids):
     for machine_id in machine_ids:
         best_label = None
         best_confidence = -1
+        has_fresh_signal = False
 
         for (obs_machine_id, channel_key), (label, confidence, timestamp) in list(shared_observations.items()):
             if obs_machine_id != machine_id:
                 continue
             if now - timestamp > OBSERVATION_STALE_SECONDS:
                 continue
+            has_fresh_signal = True
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_label = label
 
-        resolved[machine_id] = best_label if best_label is not None else "uncertain"
+        if not has_fresh_signal:
+            resolved[machine_id] = "offline"
+        elif best_label == "uncertain" or best_label is None:
+            resolved[machine_id] = "stopped"
+        else:
+            resolved[machine_id] = best_label
 
     return resolved
 
 
 def write_camera_log(shared_camera_status):
-    """Write the current camera status dict out to camera_log.json."""
     data = dict(shared_camera_status)
     with open(config.CAMERA_LOG_PATH, "w") as f:
         json.dump(data, f, indent=2)
@@ -237,7 +236,6 @@ def get_all_configured_machine_ids():
 
 
 def get_machine_to_channels_map():
-    """Returns {machine_id: [channel_key, ...]} so we know which cameras cover each machine."""
     with open(config.ROI_CONFIG_PATH, "r") as f:
         roi_config = json.load(f)
     mapping = {}
@@ -248,7 +246,6 @@ def get_machine_to_channels_map():
 
 
 def update_camera_status_for_machines(shared_camera_status, machine_to_channels):
-    """PATCH each machine's camera_status: online if any covering camera is online, else offline."""
     for machine_id, channels in machine_to_channels.items():
         is_online = any(
             shared_camera_status.get(ch, {}).get("status") == "online"
@@ -266,15 +263,15 @@ def update_camera_status_for_machines(shared_camera_status, machine_to_channels)
 
 
 def main():
-    def handle_sigterm(signum, frame):
-        print("Received SIGTERM, shutting down gracefully...")
-        raise KeyboardInterrupt()
-    signal.signal(signal.SIGTERM, handle_sigterm)
-
     manager = multiprocessing.Manager()
     shared_observations = manager.dict()
     shared_camera_status = manager.dict()
     stop_event = multiprocessing.Event()
+
+    def handle_sigterm(signum, frame):
+        print("Received SIGTERM, shutting down gracefully...")
+        raise KeyboardInterrupt()
+    signal.signal(signal.SIGTERM, handle_sigterm)
 
     machine_ids = get_all_configured_machine_ids()
     machine_to_channels = get_machine_to_channels_map()
@@ -286,19 +283,25 @@ def main():
         p.start()
         processes.append(p)
 
-    tracker = UtilizationTracker(config.UTILIZATION_STATE_PATH, config.UTILIZATION_LOG_PATH, api_base_url=config.API_BASE_URL)
+    tracker = UtilizationTracker(config.UTILIZATION_STATE_PATH, config.UTILIZATION_LOG_PATH, api_base_url=config.API_BASE_URL, undetected_log_path=config.UNDETECTED_LOG_PATH)
     last_sync_time = time.time()
     last_camera_log_time = time.time()
 
     print(f"Live monitoring started for {len(config.RTSP_URLS)} camera(s) across {len(processes)} process(es). Press Ctrl+C to stop.")
 
+    last_tick_time = time.time()
+
     try:
         while True:
             time.sleep(RESOLVER_TICK_SECONDS)
 
+            now = time.time()
+            dt = now - last_tick_time
+            last_tick_time = now
+
             resolved = resolve_machine_states(shared_observations, machine_ids)
             for machine_id, final_label in resolved.items():
-                tracker.add_frame(machine_id, final_label, RESOLVER_TICK_SECONDS)
+                tracker.add_frame(machine_id, final_label, dt)
 
             if time.time() - last_sync_time >= config.UTILIZATION_SYNC_INTERVAL_SECONDS:
                 tracker.write_all_logs()
@@ -316,7 +319,6 @@ def main():
             p.join(timeout=15)
         tracker.write_all_logs()
         write_camera_log(shared_camera_status)
-        update_camera_status_for_machines(shared_camera_status, machine_to_channels)
         print("All cameras stopped.")
 
 

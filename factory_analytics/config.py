@@ -9,14 +9,14 @@ import json
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 MODEL_PATH = os.path.join(PROJECT_ROOT, "best.pt")
-VIDEO_PATHS = [
-    os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-11 at 8.19.39 PM.mp4"),
-    os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-12 at 2.28.35 AM.mp4"),
-    os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-11 at 8.19.39 aP (3).mp4"),
-    os.path.join(PROJECT_ROOT, "WhatsAppVideo3.mp4"),
-    os.path.join(PROJECT_ROOT, "WhatsAppVideo2.mp4"),
-    os.path.join(PROJECT_ROOT, "WhatsAppVideo1.mp4"),
-]
+# VIDEO_PATHS = [
+#     os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-11 at 8.19.39 PM.mp4"),
+#     os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-12 at 2.28.35 AM.mp4"),
+#     os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-11 at 8.19.39 aP (3).mp4"),
+#     os.path.join(PROJECT_ROOT, "WhatsAppVideo3.mp4"),
+#     os.path.join(PROJECT_ROOT, "WhatsAppVideo2.mp4"),
+#     os.path.join(PROJECT_ROOT, "WhatsAppVideo1.mp4"),
+# ]
 
 ROI_CONFIG_PATH = os.path.join(PROJECT_ROOT, "roi_config.json")
 DETECTION_DIR = os.path.join(PROJECT_ROOT, "Detection_temp")
