@@ -1,50 +1,64 @@
 {
-  "MC-001": {
-    "runtime": 26585.0,
-    "downtime": 300.0,
-    "idle": 14509.0,
-    "total_available_time": 41394.0,
-    "total_available_time_formatted": "11h 29m 54s",
-    "utilization_percent": 64.22
-  },
-  "MC-002": {
-    "runtime": 4024.0,
-    "downtime": 13880.0,
-    "idle": 23485.0,
-    "total_available_time": 41389.0,
-    "total_available_time_formatted": "11h 29m 49s",
-    "utilization_percent": 9.72
-  },
-  "MC-003": {
-    "runtime": 26033.0,
-    "downtime": 208.0,
-    "idle": 15136.0,
-    "total_available_time": 41377.0,
-    "total_available_time_formatted": "11h 29m 37s",
-    "utilization_percent": 62.92
-  },
-  "MC-004": {
-    "runtime": 13278.0,
-    "downtime": 5.0,
-    "idle": 17966.0,
-    "total_available_time": 31249.0,
-    "total_available_time_formatted": "8h 40m 49s",
-    "utilization_percent": 42.49
-  },
-  "MC-005": {
-    "runtime": 2599.0,
-    "downtime": 238.0,
-    "idle": 25181.0,
-    "total_available_time": 28018.0,
-    "total_available_time_formatted": "7h 46m 58s",
-    "utilization_percent": 9.28
-  },
-  "MC-006": {
-    "runtime": 726.0,
-    "downtime": 2690.0,
-    "idle": 24602.0,
-    "total_available_time": 28018.0,
-    "total_available_time_formatted": "7h 46m 58s",
-    "utilization_percent": 2.59
+  "2026-09-10": {
+    "MC-001": {
+      "runtime": 1264.04,
+      "downtime": 0.0,
+      "offline": 11.01,
+      "undetected": 0.0,
+      "undetected_time": 11.01,
+      "total_available_time": 1264.04,
+      "total_available_time_formatted": "0h 21m 4s",
+      "utilization_percent": 100.0
+    },
+    "MC-002": {
+      "runtime": 480.45,
+      "downtime": 0.0,
+      "offline": 12.02,
+      "undetected": 782.58,
+      "undetected_time": 794.6,
+      "total_available_time": 480.45,
+      "total_available_time_formatted": "0h 8m 0s",
+      "utilization_percent": 100.0
+    },
+    "MC-003": {
+      "runtime": 1263.03,
+      "downtime": 0.0,
+      "offline": 12.02,
+      "undetected": 0.0,
+      "undetected_time": 12.02,
+      "total_available_time": 1263.03,
+      "total_available_time_formatted": "0h 21m 3s",
+      "utilization_percent": 100.0
+    },
+    "MC-004": {
+      "runtime": 0.0,
+      "downtime": 26.35,
+      "offline": 13.02,
+      "undetected": 1235.68,
+      "undetected_time": 1248.7,
+      "total_available_time": 26.35,
+      "total_available_time_formatted": "0h 0m 26s",
+      "utilization_percent": 0.0
+    },
+    "MC-005": {
+      "runtime": 840.86,
+      "downtime": 0.0,
+      "offline": 10.01,
+      "undetected": 424.18,
+      "undetected_time": 434.19,
+      "total_available_time": 840.86,
+      "total_available_time_formatted": "0h 14m 1s",
+      "utilization_percent": 100.0
+    },
+    "MC-006": {
+      "runtime": 0.0,
+      "downtime": 1251.62,
+      "offline": 23.43,
+      "undetected": 0.0,
+      "undetected_time": 23.43,
+      "total_available_time": 1251.62,
+      "total_available_time_formatted": "0h 20m 52s",
+      "utilization_percent": 0.0
+    }
   }
 }

@@ -17,5 +17,6 @@ class DetectionEventResponse(BaseModel):
     video_url: str
     detected_at: datetime
     created_at: datetime
+    undetected_time: float = 0.0
 
     model_config = ConfigDict(from_attributes=True)

@@ -42,13 +42,15 @@ class UtilizationTracker:
     def _ensure_machine(self, date_str, machine_id):
         self.daily_totals.setdefault(date_str, {})
         self.daily_totals[date_str].setdefault(
-            machine_id, {"runtime": 0.0, "downtime": 0.0, "offline": 0.0}
+            machine_id, {"runtime": 0.0, "downtime": 0.0, "offline": 0.0, "undetected": 0.0}
         )
 
     def add_frame(self, machine_id, final_label, dt_seconds):
         date_str = self._today_str()
         self._ensure_machine(date_str, machine_id)
         bucket = self.daily_totals[date_str][machine_id]
+        # ensure backward-compat for state files loaded without undetected key
+        bucket.setdefault("undetected", 0.0)
 
         if final_label == "running":
             bucket["runtime"] += dt_seconds
@@ -56,16 +58,21 @@ class UtilizationTracker:
             bucket["downtime"] += dt_seconds
         elif final_label == "offline":
             bucket["offline"] += dt_seconds
+        elif final_label == "uncertain":
+            bucket["undetected"] += dt_seconds   # low-confidence = undetected
 
     def get_summary(self, date_str, machine_id):
         self._ensure_machine(date_str, machine_id)
         t = self.daily_totals[date_str][machine_id]
-        runtime, downtime, offline = t["runtime"], t["downtime"], t["offline"]
+        runtime  = t["runtime"]
+        downtime = t["downtime"]
+        offline  = t["offline"]
+        undetected = t.get("undetected", 0.0)
 
         total_available = runtime + downtime
         utilization = (runtime / total_available * 100) if total_available > 0 else 0.0
 
-        return runtime, downtime, offline, total_available, utilization
+        return runtime, downtime, offline, undetected, total_available, utilization
 
     @staticmethod
     def _to_hours(seconds):
@@ -84,11 +91,14 @@ class UtilizationTracker:
         for date_str, machines in self.daily_totals.items():
             result[date_str] = {}
             for machine_id in machines:
-                runtime, downtime, offline, total_available, utilization = self.get_summary(date_str, machine_id)
+                runtime, downtime, offline, undetected, total_available, utilization = self.get_summary(date_str, machine_id)
                 result[date_str][machine_id] = {
                     "runtime": round(runtime, 2),
                     "downtime": round(downtime, 2),
                     "offline": round(offline, 2),
+                    "undetected": round(undetected, 2),
+                    # undetected_time = camera offline + low-confidence frames
+                    "undetected_time": round(offline + undetected, 2),
                     "total_available_time": round(total_available, 2),
                     "total_available_time_formatted": self._format_duration(total_available),
                     "utilization_percent": round(utilization, 2),
@@ -115,7 +125,7 @@ class UtilizationTracker:
             if response.status_code == 200:
                 print(f"[UTILIZATION SYNCED] {len(today_data)} machine(s) for {date_str} -> {url}")
             else:
-                print(f"[UTILIZATION SYNC FAILED] {response.status_code}: {response.text}")
+                print(f"[UTILIZATION SYNC FAILED] HTTP {response.status_code}: {response.text[:500]}")
         except requests.exceptions.RequestException as e:
             print(f"[UTILIZATION SYNC ERROR] Could not reach API: {e}")
 

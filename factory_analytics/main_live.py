@@ -211,10 +211,9 @@ def resolve_machine_states(shared_observations, machine_ids):
 
         if not has_fresh_signal:
             resolved[machine_id] = "offline"
-        elif best_label == "uncertain" or best_label is None:
-            resolved[machine_id] = "stopped"
         else:
-            resolved[machine_id] = best_label
+            # None falls back to uncertain; everything else (running/stopped/uncertain) passes through
+            resolved[machine_id] = best_label if best_label is not None else "uncertain"
 
     return resolved
 

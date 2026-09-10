@@ -6,11 +6,11 @@ from datetime import datetime
 class MachineUtilizationItem(BaseModel):
     runtime: float
     downtime: float
-    idle: float
+    idle: float = 0.0
     total_available_time: float
     total_available_time_formatted: str
     utilization_percent: float
-    undetected_time: float = 0.0
+    undetected_time: float
 
 
 class UtilizationSyncRequest(BaseModel):
@@ -21,11 +21,11 @@ class MachineUtilizationDBResponse(BaseModel):
     mc_id: str
     runtime: float
     downtime: float
-    idle: float
+    idle: float = 0.0
     total_available_time: float
     total_available_time_formatted: str
     utilization_percent: float
-    undetected_time: float = 0.0
+    undetected_time: float
     updated_at: datetime
     image_url: Optional[str] = None
 
