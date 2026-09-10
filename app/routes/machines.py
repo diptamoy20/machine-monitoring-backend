@@ -188,11 +188,11 @@ def download_utilization_excel(
     # Date range appended to title e.g. (2026-08-01 to 2026-09-08)
     if from_date or to_date:
         if from_date and to_date:
-            date_str = f"{from_date.date()} to {to_date.date()}"
+            date_str = f"{from_date.strftime('%d-%m-%Y')} to {to_date.strftime('%d-%m-%Y')}"
         elif from_date:
-            date_str = f"From {from_date.date()}"
+            date_str = f"From {from_date.strftime('%d-%m-%Y')}"
         else:
-            date_str = f"Up to {to_date.date()}"
+            date_str = f"Up to {to_date.strftime('%d-%m-%Y')}"
         title_parts.append(f"({date_str})")
 
     title_font = Font(name="Calibri", bold=True, size=14, color="FFFFFF")
