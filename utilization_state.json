@@ -1,63 +1,63 @@
 {
   "2026-09-10": {
     "MC-001": {
-      "runtime": 1264.04,
+      "runtime": 1331.51,
       "downtime": 0.0,
       "offline": 11.01,
       "undetected": 0.0,
       "undetected_time": 11.01,
-      "total_available_time": 1264.04,
-      "total_available_time_formatted": "0h 21m 4s",
+      "total_available_time": 1331.51,
+      "total_available_time_formatted": "0h 22m 12s",
       "utilization_percent": 100.0
     },
     "MC-002": {
-      "runtime": 480.45,
+      "runtime": 492.69,
       "downtime": 0.0,
       "offline": 12.02,
-      "undetected": 782.58,
-      "undetected_time": 794.6,
-      "total_available_time": 480.45,
-      "total_available_time_formatted": "0h 8m 0s",
+      "undetected": 837.82,
+      "undetected_time": 849.83,
+      "total_available_time": 492.69,
+      "total_available_time_formatted": "0h 8m 13s",
       "utilization_percent": 100.0
     },
     "MC-003": {
-      "runtime": 1263.03,
+      "runtime": 1330.51,
       "downtime": 0.0,
       "offline": 12.02,
       "undetected": 0.0,
       "undetected_time": 12.02,
-      "total_available_time": 1263.03,
-      "total_available_time_formatted": "0h 21m 3s",
+      "total_available_time": 1330.51,
+      "total_available_time_formatted": "0h 22m 11s",
       "utilization_percent": 100.0
     },
     "MC-004": {
       "runtime": 0.0,
       "downtime": 26.35,
       "offline": 13.02,
-      "undetected": 1235.68,
-      "undetected_time": 1248.7,
+      "undetected": 1303.16,
+      "undetected_time": 1316.18,
       "total_available_time": 26.35,
       "total_available_time_formatted": "0h 0m 26s",
       "utilization_percent": 0.0
     },
     "MC-005": {
-      "runtime": 840.86,
+      "runtime": 895.3,
       "downtime": 0.0,
       "offline": 10.01,
-      "undetected": 424.18,
-      "undetected_time": 434.19,
-      "total_available_time": 840.86,
-      "total_available_time_formatted": "0h 14m 1s",
+      "undetected": 437.21,
+      "undetected_time": 447.22,
+      "total_available_time": 895.3,
+      "total_available_time_formatted": "0h 14m 55s",
       "utilization_percent": 100.0
     },
     "MC-006": {
       "runtime": 0.0,
-      "downtime": 1251.62,
+      "downtime": 1319.09,
       "offline": 23.43,
       "undetected": 0.0,
       "undetected_time": 23.43,
-      "total_available_time": 1251.62,
-      "total_available_time_formatted": "0h 20m 52s",
+      "total_available_time": 1319.09,
+      "total_available_time_formatted": "0h 21m 59s",
       "utilization_percent": 0.0
     }
   }
