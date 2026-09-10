@@ -63,7 +63,7 @@ def get_utilization_state(
         if selected_ids:
             query = query.filter(MachineUtilization.mc_id.in_(selected_ids))
 
-    rows = query.order_by(MachineUtilization.date, MachineUtilization.mc_id).all()
+    rows = query.order_by(MachineUtilization.date.desc(), MachineUtilization.mc_id).all()
 
     # 4. Build response list — one entry per machine per day
     response_data = []
@@ -168,7 +168,8 @@ def download_utilization_excel(
         values = [
             str(row.date),
             row.mc_id,
-            _seconds_to_hhmmss(row.idle),
+            # _seconds_to_hhmmss(row.idle),
+            "00:00:00",
             _seconds_to_hhmmss(row.runtime),
             _seconds_to_hhmmss(row.downtime)
         ]
