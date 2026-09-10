@@ -27,6 +27,7 @@ def sync_utilization(db: Session, payload: UtilizationSyncRequest):
         row.total_available_time = item.total_available_time
         row.total_available_time_formatted = item.total_available_time_formatted
         row.utilization_percent = item.utilization_percent
+        row.undetected_time = item.undetected_time
         updated.append(row)
 
     db.commit()

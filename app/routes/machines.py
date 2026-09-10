@@ -19,12 +19,44 @@ router = APIRouter(prefix="/api/machines", tags=["machines"])
 UTILIZATION_STATE_PATH = Path(__file__).resolve().parent.parent.parent / "utilization_state.json"
 
 
-@router.get("", response_model=List[MachineResponse], summary="Get all machines")
+@router.get("", summary="Get all machines")
 def get_machines(db: Session = Depends(get_db)):
     """
-    Return the current status and metadata for all monitored machines.
+    Return the current status and metadata for all monitored machines,
+    enriched with today's undetected_time from machine_utilization (0 if no data).
     """
-    return machine_service.get_all_machines(db)
+    from datetime import date as date_type
+    from app.database.models import MachineUtilization
+
+    machines = machine_service.get_all_machines(db)
+    today = date_type.today()
+
+    # Build a map of mc_id -> today's undetected_time
+    today_util = (
+        db.query(MachineUtilization.mc_id, MachineUtilization.undetected_time)
+        .filter(MachineUtilization.date == today)
+        .all()
+    )
+    undetected_map = {row.mc_id: row.undetected_time for row in today_util}
+
+    result = []
+    for m in machines:
+        machine_dict = {
+            "id":             m.id,
+            "mc_id":          m.mc_id,
+            "name":           m.name,
+            "image_url":      m.image_url,
+            "video_url":      m.video_url,
+            "status":         m.status,
+            "detected_at":    m.detected_at,
+            "camera_status":  m.camera_status,
+            "created_at":     m.created_at,
+            "updated_at":     m.updated_at,
+            "undetected_time": undetected_map.get(m.mc_id, 0.0),
+        }
+        result.append(machine_dict)
+
+    return result
 
 
 from app.database.models import MachineUtilization
@@ -77,6 +109,7 @@ def get_utilization_state(
             "total_available_time":           row.total_available_time,
             "total_available_time_formatted": row.total_available_time_formatted,
             "utilization_percent":            row.utilization_percent,
+            "undetected_time":                row.undetected_time,
             "image_url":                      image_map.get(row.mc_id),
         })
 

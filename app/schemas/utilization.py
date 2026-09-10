@@ -10,6 +10,7 @@ class MachineUtilizationItem(BaseModel):
     total_available_time: float
     total_available_time_formatted: str
     utilization_percent: float
+    undetected_time: float = 0.0
 
 
 class UtilizationSyncRequest(BaseModel):
@@ -24,6 +25,7 @@ class MachineUtilizationDBResponse(BaseModel):
     total_available_time: float
     total_available_time_formatted: str
     utilization_percent: float
+    undetected_time: float = 0.0
     updated_at: datetime
     image_url: Optional[str] = None
 

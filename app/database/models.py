@@ -30,6 +30,7 @@ class DetectionEvent(Base):
     status = Column(String, nullable=False)
     video_url = Column(String, nullable=False)
     detected_at = Column(DateTime(timezone=True), nullable=False)
+    undetected_time = Column(Float, nullable=False, default=0.0)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc))
 
@@ -51,6 +52,7 @@ class MachineUtilization(Base):
     total_available_time = Column(Float, nullable=False, default=0.0)
     total_available_time_formatted = Column(String, nullable=True)
     utilization_percent = Column(Float, nullable=False, default=0.0)
+    undetected_time = Column(Float, nullable=False, default=0.0)
 
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
 
