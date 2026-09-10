@@ -143,35 +143,70 @@ def download_utilization_excel(
         "Machine ID",
         "Idle Time (HH:MM:SS)",
         "Runtime (HH:MM:SS)",
-        "Downtime (HH:MM:SS)"
+        "Downtime (HH:MM:SS)",
+        "Utilization (%)",
     ]
 
-    # Write header row
+    num_cols = len(headers)
+
+    # ── Row 1 : Report title (merged across all columns) ──────────────────────
+    title_parts = ["Machines Utilisation Report"]
+
+    # Date range in brackets e.g. (2026-08-01 to 2026-09-08)
+    if from_date or to_date:
+        if from_date and to_date:
+            date_str = f"{from_date.date()} to {to_date.date()}"
+        elif from_date:
+            date_str = f"From {from_date.date()}"
+        else:
+            date_str = f"Up to {to_date.date()}"
+        title_parts.append(f"({date_str})")
+
+    # Selected machines in brackets e.g. [MC-001, MC-002]
+    if mc_ids and mc_ids.strip().lower() != "all":
+        sel = [mid.strip() for mid in mc_ids.split(",") if mid.strip()]
+        if sel:
+            title_parts.append(f"[{', '.join(sel)}]")
+
+    title_font = Font(name="Calibri", bold=True, size=14, color="FFFFFF")
+    title_fill = PatternFill(fill_type="solid", fgColor="1F3864")
+
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_cols)
+    title_cell = ws.cell(row=1, column=1, value="  ".join(title_parts))
+    title_cell.font      = title_font
+    title_cell.fill      = title_fill
+    title_cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 28
+
+    # ── Row 2 : Column headers ────────────────────────────────────────────────
+    HEADER_ROW = 2
     for col_idx, header in enumerate(headers, start=1):
-        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell = ws.cell(row=HEADER_ROW, column=col_idx, value=header)
         cell.font        = header_font
         cell.fill        = header_fill
         cell.alignment   = center_align
         cell.border      = thin_border
 
-    # Freeze header row and enable column AutoFilter dropdowns
-    ws.freeze_panes = "A2"
-    ws.auto_filter.ref = ws.dimensions  # adds filter arrows to every header column
+    # Freeze rows 1+2 so title and headers stay visible while scrolling
+    ws.freeze_panes = "A3"
+    ws.auto_filter.ref = f"A{HEADER_ROW}:{get_column_letter(num_cols)}{HEADER_ROW}"
 
     # Data row styling
     data_font        = Font(name="Calibri", size=10)
     alt_fill         = PatternFill(fill_type="solid", fgColor="DCE6F1")  # light blue alternate
 
-    # Write data rows
-    for row_idx, row in enumerate(rows, start=2):
+    # Write data rows  (start at row 3 — row 1 = title, row 2 = headers)
+    for row_idx, row in enumerate(rows, start=3):
         fill = alt_fill if row_idx % 2 == 0 else PatternFill()   # alternate row shading
         values = [
-            str(row.date),
+            # str(row.date),
+            row.date.strftime("%d-%m-%Y"),
             row.mc_id,
             # _seconds_to_hhmmss(row.idle),
             "00:00:00",
             _seconds_to_hhmmss(row.runtime),
-            _seconds_to_hhmmss(row.downtime)
+            _seconds_to_hhmmss(row.downtime),
+            round(row.utilization_percent, 2),
         ]
         for col_idx, value in enumerate(values, start=1):
             cell = ws.cell(row=row_idx, column=col_idx, value=value)
