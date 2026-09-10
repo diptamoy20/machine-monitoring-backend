@@ -1,11 +1,6 @@
 import os
 import json
 
-# ==========================================
-# CONFIGURATION CONSTANTS
-# ==========================================
-# PROJECT_ROOT resolves correctly regardless of OS or working directory -
-# one level up from this file's own location (factory_analytics/../)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 MODEL_PATH = os.path.join(PROJECT_ROOT, "best.pt")
@@ -35,9 +30,6 @@ RECORD_SECONDS = 30
 DEBUG_TRIGGER = False
 
 
-# ==========================================
-# LIVE RTSP CAMERA STREAMS
-# ==========================================
 RTSP_URLS = [
     "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=22&subtype=1",
     "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=23&subtype=1",
@@ -49,6 +41,8 @@ UTILIZATION_SYNC_INTERVAL_SECONDS = 60
 RTSP_RECONNECT_DELAY_SECONDS = 5
 CAMERA_LOG_PATH = os.path.join(PROJECT_ROOT, "camera_log.json")
 CAMERA_LOG_WRITE_INTERVAL_SECONDS = 10
+CAMERA_OFFLINE_LOG_PATH = os.path.join(PROJECT_ROOT, "camera_offline_log.txt")
+UNDETECTED_LOG_PATH = os.path.join(PROJECT_ROOT, "undetected_machine_status_log.txt")
 
 
 def utilization_state_path_for_channel(channel_key):
@@ -59,9 +53,6 @@ def utilization_log_path_for_channel(channel_key):
     return os.path.join(os.path.dirname(UTILIZATION_LOG_PATH), f"utilization_log_{channel_key}.txt")
 
 
-# ==========================================
-# INITIALIZATION LOGIC
-# ==========================================
 def create_files_if_not_exist():
     required_directories = [
         os.path.dirname(MODEL_PATH),
