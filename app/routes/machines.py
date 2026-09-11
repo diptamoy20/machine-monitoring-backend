@@ -178,14 +178,14 @@ def download_utilization_excel(
     style_range(ws, f"A1:{get_column_letter(num_cols)}1", fill=PatternFill("solid", fgColor="1F3864"))
 
     # 2. Header Block (Rows 2 - 4)
-    ws.row_dimensions[2].height = 24
-    ws.row_dimensions[3].height = 18
-    ws.row_dimensions[4].height = 18
+    ws.row_dimensions[2].height = 28
+    ws.row_dimensions[3].height = 20
+    ws.row_dimensions[4].height = 24
 
     # Insert corporate logo if available (centered horizontally in Column A)
     logo_img = get_report_logo(target_height=54)
     if logo_img:
-        center_image_in_cell(ws, logo_img, col_idx=0, row_idx=1, col_width_chars=18)
+        center_image_in_cell(ws, logo_img, col_idx=0, row_idx=1, col_width_chars=18, row_offset_px=8)
 
     # Date range formatting
     if from_date and to_date:
@@ -197,13 +197,17 @@ def download_utilization_excel(
     else:
         date_str = "All Historical Dates"
 
-    # Selected machines formatting
+    # Selected machines formatting (deduplicate IDs passed from frontend)
     selected_machine_ids = []
     if mc_ids and mc_ids.strip().lower() != "all":
-        selected_machine_ids = [mid.strip() for mid in mc_ids.split(",") if mid.strip()]
+        raw_ids = [mid.strip() for mid in mc_ids.split(",") if mid.strip()]
+        selected_machine_ids = list(dict.fromkeys(raw_ids))
 
     if selected_machine_ids:
-        machines_str = f"Machines: {', '.join(selected_machine_ids)}"
+        if len(selected_machine_ids) > 10:
+            machines_str = f"Machines: {', '.join(selected_machine_ids[:10])}... ({len(selected_machine_ids)} Total)"
+        else:
+            machines_str = f"Machines: {', '.join(selected_machine_ids)}"
     else:
         machines_str = "Scope: All Monitored Production Machines"
 
@@ -218,7 +222,7 @@ def download_utilization_excel(
 
     ws.merge_cells("B4:F4")
     ws.cell(row=4, column=2, value=machines_str).font = Font(name="Calibri", size=9.5, italic=True, color="4A5568")
-    ws.cell(row=4, column=2).alignment = Alignment(horizontal="center", vertical="center")
+    ws.cell(row=4, column=2).alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     # --- 3. Optional Executive Summary KPI Metric Cards (commented out for now; uncomment to enable) ---
     # ws.row_dimensions[5].height = 8

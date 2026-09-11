@@ -7,6 +7,7 @@ pydantic
 pytest
 httpx
 openpyxl
+Pillow
 # YOLO inference dependencies
 ultralytics
 opencv-python
