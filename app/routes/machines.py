@@ -13,6 +13,7 @@ from app.database.connection import get_db
 from app.database.models import MachineStatus
 from app.schemas.machine import MachineResponse, MachineCreate, MachineUpdate
 from app.services import machine_service
+from app.utils.excel_helper import get_report_logo, style_range, center_image_in_cell
 
 router = APIRouter(prefix="/api/machines", tags=["machines"])
 
@@ -155,21 +156,11 @@ def download_utilization_excel(
 
     rows = query.order_by(MachineUtilization.date, MachineUtilization.mc_id).all()
 
-    # --- 2. Build Excel workbook ---
+    # --- 2. Build Excel workbook (Professional Industrial Report) ---
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "KPI Utilization"
-
-    # Header styling
-    header_font  = Font(name="Calibri", bold=True, color="FFFFFF", size=11)
-    header_fill  = PatternFill(fill_type="solid", fgColor="1F3864")   # dark navy
-    center_align = Alignment(horizontal="center", vertical="center")
-    thin_border  = Border(
-        left=Side(style="thin"),
-        right=Side(style="thin"),
-        top=Side(style="thin"),
-        bottom=Side(style="thin"),
-    )
+    ws.views.sheetView[0].showGridLines = True
 
     headers = [
         "Date",
@@ -179,92 +170,242 @@ def download_utilization_excel(
         "Downtime (HH:MM:SS)",
         "Utilization (%)",
     ]
-
     num_cols = len(headers)
 
-    # ── Row 1 : Report title (merged across all columns) ──────────────────────
-    title_parts = ["Machines Utilisation Report"]
-
-    # Date range appended to title e.g. (2026-08-01 to 2026-09-08)
-    if from_date or to_date:
-        if from_date and to_date:
-            date_str = f"{from_date.strftime('%d-%m-%Y')} to {to_date.strftime('%d-%m-%Y')}"
-        elif from_date:
-            date_str = f"From {from_date.strftime('%d-%m-%Y')}"
-        else:
-            date_str = f"Up to {to_date.strftime('%d-%m-%Y')}"
-        title_parts.append(f"({date_str})")
-
-    title_font = Font(name="Calibri", bold=True, size=14, color="FFFFFF")
-    title_fill = PatternFill(fill_type="solid", fgColor="1F3864")
-
+    # 1. Top accent line
+    ws.row_dimensions[1].height = 4
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=num_cols)
-    title_cell = ws.cell(row=1, column=1, value="  ".join(title_parts))
-    title_cell.font      = title_font
-    title_cell.fill      = title_fill
-    title_cell.alignment = Alignment(horizontal="center", vertical="center")
-    ws.row_dimensions[1].height = 28
+    style_range(ws, f"A1:{get_column_letter(num_cols)}1", fill=PatternFill("solid", fgColor="1F3864"))
 
-    # ── Row 2 (optional) : Selected machines subtitle ─────────────────────────
+    # 2. Header Block (Rows 2 - 4)
+    ws.row_dimensions[2].height = 24
+    ws.row_dimensions[3].height = 18
+    ws.row_dimensions[4].height = 18
+
+    # Insert corporate logo if available (centered horizontally in Column A)
+    logo_img = get_report_logo(target_height=54)
+    if logo_img:
+        center_image_in_cell(ws, logo_img, col_idx=0, row_idx=1, col_width_chars=18)
+
+    # Date range formatting
+    if from_date and to_date:
+        date_str = f"{from_date.strftime('%d-%m-%Y')} to {to_date.strftime('%d-%m-%Y')}"
+    elif from_date:
+        date_str = f"From {from_date.strftime('%d-%m-%Y')}"
+    elif to_date:
+        date_str = f"Up to {to_date.strftime('%d-%m-%Y')}"
+    else:
+        date_str = "All Historical Dates"
+
+    # Selected machines formatting
     selected_machine_ids = []
     if mc_ids and mc_ids.strip().lower() != "all":
         selected_machine_ids = [mid.strip() for mid in mc_ids.split(",") if mid.strip()]
 
-    subtitle_row_used = False
     if selected_machine_ids:
-        subtitle_font = Font(name="Calibri", italic=True, bold=True, size=10, color="FFFFFF")
-        subtitle_fill = PatternFill(fill_type="solid", fgColor="2E4D8A")   # slightly lighter navy
+        machines_str = f"Machines: {', '.join(selected_machine_ids)}"
+    else:
+        machines_str = "Scope: All Monitored Production Machines"
 
-        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=num_cols)
-        subtitle_cell = ws.cell(row=2, column=1,
-                                value=f"Machines: {', '.join(selected_machine_ids)}")
-        subtitle_cell.font      = subtitle_font
-        subtitle_cell.fill      = subtitle_fill
-        subtitle_cell.alignment = Alignment(horizontal="center", vertical="center")
-        ws.row_dimensions[2].height = 18
-        subtitle_row_used = True
+    # Header text info (Columns B to F)
+    ws.merge_cells("B2:F2")
+    ws.cell(row=2, column=2, value="MACHINES UTILISATION REPORT").font = Font(name="Calibri", size=15, bold=True, color="1F3864")
+    ws.cell(row=2, column=2).alignment = Alignment(horizontal="center", vertical="center")
 
-    # ── Column headers ────────────────────────────────────────────────────────
-    HEADER_ROW = 3 if subtitle_row_used else 2
+    ws.merge_cells("B3:F3")
+    ws.cell(row=3, column=2, value=f"Reporting Period: {date_str}").font = Font(name="Calibri", size=10, bold=True, color="2C3E50")
+    ws.cell(row=3, column=2).alignment = Alignment(horizontal="center", vertical="center")
+
+    ws.merge_cells("B4:F4")
+    ws.cell(row=4, column=2, value=machines_str).font = Font(name="Calibri", size=9.5, italic=True, color="4A5568")
+    ws.cell(row=4, column=2).alignment = Alignment(horizontal="center", vertical="center")
+
+    # --- 3. Optional Executive Summary KPI Metric Cards (commented out for now; uncomment to enable) ---
+    # ws.row_dimensions[5].height = 8
+    # total_runtime_sec = sum(r.runtime or 0 for r in rows)
+    # total_downtime_sec = sum(r.downtime or 0 for r in rows)
+    # total_idle_sec = sum(r.idle or 0 for r in rows)
+    # avg_utilization = (sum(r.utilization_percent or 0 for r in rows) / len(rows)) if rows else 0.0
+    # unique_machines = len({r.mc_id for r in rows})
+    # total_records = len(rows)
+    # ws.row_dimensions[6].height = 16
+    # ws.row_dimensions[7].height = 24
+    # card_border = Border(
+    #     left=Side(style="thin", color="D0D7DE"),
+    #     right=Side(style="thin", color="D0D7DE"),
+    #     top=Side(style="thin", color="D0D7DE"),
+    #     bottom=Side(style="thin", color="D0D7DE"),
+    # )
+    # # Card 1: Plant Avg Utilization (A6:B7)
+    # ws.merge_cells("A6:B6")
+    # ws.cell(row=6, column=1, value="PLANT AVG UTILIZATION")
+    # style_range(ws, "A6:B6", font=Font(name="Calibri", size=8.5, bold=True, color="334155"),
+    #             fill=PatternFill("solid", fgColor="F1F5F9"), alignment=Alignment(horizontal="center", vertical="center"))
+    # ws.merge_cells("A7:B7")
+    # ws.cell(row=7, column=1, value=f"{avg_utilization:.2f}%")
+    # style_range(ws, "A7:B7", font=Font(name="Calibri", size=14, bold=True, color="0F172A"),
+    #             fill=PatternFill("solid", fgColor="F1F5F9"), alignment=Alignment(horizontal="center", vertical="center"))
+    # # Card 2: Total Runtime (C6:C7)
+    # ws.cell(row=6, column=3, value="TOTAL RUNTIME")
+    # ws.cell(row=6, column=3).font = Font(name="Calibri", size=8.5, bold=True, color="166534")
+    # ws.cell(row=6, column=3).fill = PatternFill("solid", fgColor="F0FDF4")
+    # ws.cell(row=6, column=3).alignment = Alignment(horizontal="center", vertical="center")
+    # ws.cell(row=7, column=3, value=_seconds_to_hhmmss(total_runtime_sec))
+    # ws.cell(row=7, column=3).font = Font(name="Calibri", size=12, bold=True, color="15803D")
+    # ws.cell(row=7, column=3).fill = PatternFill("solid", fgColor="F0FDF4")
+    # ws.cell(row=7, column=3).alignment = Alignment(horizontal="center", vertical="center")
+    # # Card 3: Total Downtime (D6:D7)
+    # ws.cell(row=6, column=4, value="TOTAL DOWNTIME")
+    # ws.cell(row=6, column=4).font = Font(name="Calibri", size=8.5, bold=True, color="991B1B")
+    # ws.cell(row=6, column=4).fill = PatternFill("solid", fgColor="FEF2F2")
+    # ws.cell(row=6, column=4).alignment = Alignment(horizontal="center", vertical="center")
+    # ws.cell(row=7, column=4, value=_seconds_to_hhmmss(total_downtime_sec))
+    # ws.cell(row=7, column=4).font = Font(name="Calibri", size=12, bold=True, color="B91C1C")
+    # ws.cell(row=7, column=4).fill = PatternFill("solid", fgColor="FEF2F2")
+    # ws.cell(row=7, column=4).alignment = Alignment(horizontal="center", vertical="center")
+    # # Card 4: Assets & Records (E6:F7)
+    # ws.merge_cells("E6:F6")
+    # ws.cell(row=6, column=5, value="MONITORED ASSETS")
+    # style_range(ws, "E6:F6", font=Font(name="Calibri", size=8.5, bold=True, color="1E293B"),
+    #             fill=PatternFill("solid", fgColor="F8FAFC"), alignment=Alignment(horizontal="center", vertical="center"))
+    # ws.merge_cells("E7:F7")
+    # ws.cell(row=7, column=5, value=f"{unique_machines} Machines ({total_records} Logs)")
+    # style_range(ws, "E7:F7", font=Font(name="Calibri", size=12, bold=True, color="1E293B"),
+    #             fill=PatternFill("solid", fgColor="F8FAFC"), alignment=Alignment(horizontal="center", vertical="center"))
+    # for rng in ["A6:B6", "A7:B7", "C6:C6", "C7:C7", "D6:D6", "D7:D7", "E6:F6", "E7:F7"]:
+    #     for r in ws[rng]:
+    #         for c in r:
+    #             c.border = card_border
+    # ws.row_dimensions[8].height = 10
+
+    # 4. Table Headers (Row 5 directly after scope row)
+    HEADER_ROW = 5
+    ws.row_dimensions[HEADER_ROW].height = 26
+    header_font = Font(name="Calibri", bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(fill_type="solid", fgColor="1F3864")
+    center_align = Alignment(horizontal="center", vertical="center")
+    header_border = Border(
+        left=Side(style="thin", color="1F3864"),
+        right=Side(style="thin", color="1F3864"),
+        top=Side(style="thin", color="1F3864"),
+        bottom=Side(style="thin", color="1F3864"),
+    )
+
     for col_idx, header in enumerate(headers, start=1):
         cell = ws.cell(row=HEADER_ROW, column=col_idx, value=header)
-        cell.font        = header_font
-        cell.fill        = header_fill
-        cell.alignment   = center_align
-        cell.border      = thin_border
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = center_align
+        cell.border = header_border
 
-    # Freeze all rows above data so title/subtitle/headers stay visible
+    # Freeze panes so header row 9 stays fixed while scrolling
     ws.freeze_panes = f"A{HEADER_ROW + 1}"
-    ws.auto_filter.ref = f"A{HEADER_ROW}:{get_column_letter(num_cols)}{HEADER_ROW}"
 
-    # Data row styling
-    data_font = Font(name="Calibri", size=10)
-    alt_fill  = PatternFill(fill_type="solid", fgColor="DCE6F1")  # light blue alternate
+    # 5. Data Rows
+    data_border = Border(
+        left=Side(style="thin", color="DCE1E7"),
+        right=Side(style="thin", color="DCE1E7"),
+        top=Side(style="thin", color="DCE1E7"),
+        bottom=Side(style="thin", color="DCE1E7"),
+    )
+    alt_fill = PatternFill(fill_type="solid", fgColor="F8FAFC")
+    white_fill = PatternFill(fill_type="solid", fgColor="FFFFFF")
 
-    # Write data rows  (immediately after header row)
+    last_data_row = HEADER_ROW
     for row_idx, row in enumerate(rows, start=HEADER_ROW + 1):
-        fill = alt_fill if row_idx % 2 == 0 else PatternFill()   # alternate row shading
-        values = [
-            # str(row.date),
-            row.date.strftime("%d-%m-%Y"),
-            row.mc_id,
-            # _seconds_to_hhmmss(row.idle),
-            "00:00:00",
-            _seconds_to_hhmmss(row.runtime),
-            _seconds_to_hhmmss(row.downtime),
-            round(row.utilization_percent, 2),
-        ]
-        for col_idx, value in enumerate(values, start=1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=value)
-            cell.font      = data_font
-            cell.fill      = fill
-            cell.border    = thin_border
-            cell.alignment = Alignment(horizontal="center", vertical="center")
+        last_data_row = row_idx
+        ws.row_dimensions[row_idx].height = 20
+        base_fill = alt_fill if row_idx % 2 == 0 else white_fill
+        util_val = round(row.utilization_percent or 0.0, 2)
 
-    # Auto-fit column widths
-    for col_idx, header in enumerate(headers, start=1):
+        # Soft badge coloring for Utilization column
+        if util_val >= 60.0:
+            util_fill = PatternFill(fill_type="solid", fgColor="DCFCE7")
+            util_font = Font(name="Calibri", size=10, bold=True, color="166534")
+        elif util_val >= 25.0:
+            util_fill = PatternFill(fill_type="solid", fgColor="FEF3C7")
+            util_font = Font(name="Calibri", size=10, bold=True, color="92400E")
+        else:
+            util_fill = PatternFill(fill_type="solid", fgColor="FEE2E2")
+            util_font = Font(name="Calibri", size=10, bold=True, color="991B1B")
+
+        values_and_styles = [
+            (row.date.strftime("%d-%m-%Y"), Font(name="Calibri", size=10, color="1E293B"), base_fill),
+            (row.mc_id, Font(name="Calibri", size=10, bold=True, color="0F172A"), base_fill),
+            ("00:00:00", Font(name="Calibri", size=10, color="64748B"), base_fill),
+            (_seconds_to_hhmmss(row.runtime or 0), Font(name="Calibri", size=10, bold=True, color="15803D"), base_fill),
+            (_seconds_to_hhmmss(row.downtime or 0), Font(name="Calibri", size=10, bold=True, color="B91C1C"), base_fill),
+            (util_val, util_font, util_fill),
+        ]
+
+        for col_idx, (val, fnt, fll) in enumerate(values_and_styles, start=1):
+            cell = ws.cell(row=row_idx, column=col_idx, value=val)
+            cell.font = fnt
+            cell.fill = fll
+            cell.border = data_border
+            cell.alignment = center_align
+
+    # Auto filter on the data table
+    ws.auto_filter.ref = f"A{HEADER_ROW}:{get_column_letter(num_cols)}{max(last_data_row, HEADER_ROW)}"
+
+    # --- 6. Optional Summary / Total Row (commented out for now; uncomment to enable) ---
+    # total_runtime_sec = sum(r.runtime or 0 for r in rows)
+    # total_downtime_sec = sum(r.downtime or 0 for r in rows)
+    # total_idle_sec = sum(r.idle or 0 for r in rows)
+    # avg_utilization = (sum(r.utilization_percent or 0 for r in rows) / len(rows)) if rows else 0.0
+    # total_row_idx = last_data_row + 1
+    # ws.row_dimensions[total_row_idx].height = 22
+    # total_fill = PatternFill(fill_type="solid", fgColor="E2E8F0")
+    # total_border = Border(
+    #     top=Side(style="thin", color="94A3B8"),
+    #     bottom=Side(style="double", color="0F172A"),
+    #     left=Side(style="thin", color="E2E8F0"),
+    #     right=Side(style="thin", color="E2E8F0"),
+    # )
+    # ws.merge_cells(start_row=total_row_idx, start_column=1, end_row=total_row_idx, end_column=2)
+    # tot_label_cell = ws.cell(row=total_row_idx, column=1, value="TOTAL / OVERALL AVERAGE")
+    # tot_label_cell.alignment = Alignment(horizontal="right", vertical="center")
+    # style_range(ws, f"A{total_row_idx}:B{total_row_idx}",
+    #             font=Font(name="Calibri", size=10, bold=True, color="0F172A"),
+    #             fill=total_fill, border=total_border,
+    #             alignment=Alignment(horizontal="right", vertical="center"))
+    # total_values = [
+    #     (3, "00:00:00", Font(name="Calibri", size=10, bold=True, color="64748B")),
+    #     (4, _seconds_to_hhmmss(total_runtime_sec), Font(name="Calibri", size=10, bold=True, color="15803D")),
+    #     (5, _seconds_to_hhmmss(total_downtime_sec), Font(name="Calibri", size=10, bold=True, color="B91C1C")),
+    #     (6, round(avg_utilization, 2), Font(name="Calibri", size=10.5, bold=True, color="0F172A")),
+    # ]
+    # for col_idx, val, fnt in total_values:
+    #     cell = ws.cell(row=total_row_idx, column=col_idx, value=val)
+    #     cell.font = fnt
+    #     cell.fill = total_fill
+    #     cell.border = total_border
+    #     cell.alignment = center_align
+
+    # --- 7. Optional Footer Note (commented out for now; uncomment to enable) ---
+    # footer_row_idx = (last_data_row + 2)
+    # ws.row_dimensions[footer_row_idx].height = 18
+    # ws.merge_cells(start_row=footer_row_idx, start_column=1, end_row=footer_row_idx, end_column=num_cols)
+    # footer_cell = ws.cell(
+    #     row=footer_row_idx,
+    #     column=1,
+    #     value="Machine Monitoring & Industrial Operations System | Automated Report | Confidential"
+    # )
+    # footer_cell.font = Font(name="Calibri", size=8.5, italic=True, color="64748B")
+    # footer_cell.alignment = Alignment(horizontal="left", vertical="center")
+
+    # 8. Column widths
+    col_widths = {
+        1: 18,  # Date
+        2: 18,  # Machine ID
+        3: 24,  # Idle Time
+        4: 24,  # Runtime
+        5: 24,  # Downtime
+        6: 18,  # Utilization (%)
+    }
+    for col_idx, width in col_widths.items():
         col_letter = get_column_letter(col_idx)
-        ws.column_dimensions[col_letter].width = max(len(header) + 4, 18)
+        ws.column_dimensions[col_letter].width = width
 
     # --- 3. Stream the file to the client ---
     buffer = io.BytesIO()
