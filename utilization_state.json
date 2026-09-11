@@ -1,0 +1,76 @@
+{
+  "2026-09-11": {
+    "MC-001": {
+      "runtime": 58199.44,
+      "downtime": 620.78,
+      "offline": 52991.87,
+      "undetected": 0.0,
+      "undetected_time": 52991.87,
+      "offline_time": 52991.87,
+      "total_available_time": 58820.21,
+      "total_available_time_formatted": "16h 20m 20s",
+      "total_time": 111812.08,
+      "utilization_percent": 98.94
+    },
+    "MC-002": {
+      "runtime": 50728.37,
+      "downtime": 8091.84,
+      "offline": 52306.36,
+      "undetected": 0.0,
+      "undetected_time": 52306.36,
+      "offline_time": 52306.36,
+      "total_available_time": 58820.21,
+      "total_available_time_formatted": "16h 20m 20s",
+      "total_time": 111126.57,
+      "utilization_percent": 86.24
+    },
+    "MC-003": {
+      "runtime": 57715.78,
+      "downtime": 1104.43,
+      "offline": 51556.63,
+      "undetected": 0.0,
+      "undetected_time": 51556.63,
+      "offline_time": 51556.63,
+      "total_available_time": 58820.21,
+      "total_available_time_formatted": "16h 20m 20s",
+      "total_time": 110376.84,
+      "utilization_percent": 98.12
+    },
+    "MC-004": {
+      "runtime": 39564.93,
+      "downtime": 19255.29,
+      "offline": 6758.51,
+      "undetected": 0.0,
+      "undetected_time": 6758.51,
+      "offline_time": 6758.51,
+      "total_available_time": 58820.21,
+      "total_available_time_formatted": "16h 20m 20s",
+      "total_time": 65578.72,
+      "utilization_percent": 67.26
+    },
+    "MC-005": {
+      "runtime": 19323.56,
+      "downtime": 39496.66,
+      "offline": 6661.84,
+      "undetected": 0.0,
+      "undetected_time": 6661.84,
+      "offline_time": 6661.84,
+      "total_available_time": 58820.21,
+      "total_available_time_formatted": "16h 20m 20s",
+      "total_time": 65482.05,
+      "utilization_percent": 32.85
+    },
+    "MC-006": {
+      "runtime": 14849.41,
+      "downtime": 43970.8,
+      "offline": 6666.78,
+      "undetected": 0.0,
+      "undetected_time": 6666.78,
+      "offline_time": 6666.78,
+      "total_available_time": 58820.21,
+      "total_available_time_formatted": "16h 20m 20s",
+      "total_time": 65486.99,
+      "utilization_percent": 25.25
+    }
+  }
+}
