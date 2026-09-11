@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.config import settings
 from app.database.connection import engine, Base
-from app.routes import machines, inference, detection, utilization
+from app.routes import machines, inference, detection, utilization, roi_editor
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -46,6 +46,7 @@ app.include_router(machines.router)
 app.include_router(inference.router)
 app.include_router(detection.router)
 app.include_router(utilization.router)
+app.include_router(roi_editor.router)
 
 
 @app.on_event("startup")
