@@ -97,10 +97,11 @@ class UtilizationTracker:
                     "downtime": round(downtime, 2),
                     "offline": round(offline, 2),
                     "undetected": round(undetected, 2),
-                    # undetected_time = camera offline + low-confidence frames
                     "undetected_time": round(offline + undetected, 2),
+                    "offline_time": round(offline, 2),
                     "total_available_time": round(total_available, 2),
                     "total_available_time_formatted": self._format_duration(total_available),
+                    "total_time": round(total_available + offline, 2),
                     "utilization_percent": round(utilization, 2),
                 }
         return result

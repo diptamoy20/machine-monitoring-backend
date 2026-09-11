@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.config import settings
 from app.database.connection import engine, Base
-from app.routes import machines, inference, detection, utilization, roi_editor
+from app.routes import machines, inference, detection, utilization, roi_editor, camera_sessions
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -18,6 +18,8 @@ try:
         conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS video_url VARCHAR;"))
         conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS detected_at TIMESTAMPTZ;"))
         conn.execute(text("ALTER TABLE machine_status ADD COLUMN IF NOT EXISTS camera_status VARCHAR DEFAULT 'offline';"))
+        conn.execute(text("ALTER TABLE machine_utilization ADD COLUMN IF NOT EXISTS offline_time FLOAT DEFAULT 0.0;"))
+        conn.execute(text("ALTER TABLE machine_utilization ADD COLUMN IF NOT EXISTS total_time FLOAT DEFAULT 0.0;"))
     logger.info("Tables created or verified successfully.")
 except Exception as e:
     logger.error("Failed to create tables. Database might be unreachable.")
@@ -47,6 +49,7 @@ app.include_router(inference.router)
 app.include_router(detection.router)
 app.include_router(utilization.router)
 app.include_router(roi_editor.router)
+app.include_router(camera_sessions.router)
 
 
 @app.on_event("startup")

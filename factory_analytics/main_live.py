@@ -25,6 +25,7 @@ from roi_manager import ROIManager
 from model_utils import letterbox_crop, crop_polygon, LabelSmoother, resolve_final_label, get_label_color
 from recorder import ClipRecorder
 from utilization_tracker import UtilizationTracker
+from offline_session_tracker import OfflineSessionTracker
 from select_roi_rtsp import channel_key_from_url, cam_ip_from_url
 from rtsp_reader import RtspStreamReader
 
@@ -115,13 +116,22 @@ def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
         for roi in rois
     }
 
+    offline_tracker = OfflineSessionTracker(config.API_BASE_URL)
+    session_state = {"offline_since": None}
+
     def on_connect():
         print(f"[{channel_key}] Connected.")
         set_camera_status(shared_camera_status, channel_key, cam_ip, "online")
+        if session_state["offline_since"] is not None:
+            offline_tracker.mark_online(channel_key, cam_ip, session_state["offline_since"])
+            session_state["offline_since"] = None
 
     def on_disconnect():
         print(f"[{channel_key}] Lost connection - reader is auto-recovering...")
         set_camera_status(shared_camera_status, channel_key, cam_ip, "offline")
+        if session_state["offline_since"] is None:
+            session_state["offline_since"] = time.time()
+            offline_tracker.mark_offline(channel_key, cam_ip, session_state["offline_since"])
         for recorder in recorders.values():
             recorder.force_stop_if_recording()
 

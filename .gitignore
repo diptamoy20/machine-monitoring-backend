@@ -13,3 +13,7 @@ Tracking_vehicle_movements/
 roi_config.backup_*.json
 app/static/images/*.jpg
 app/static/images/*.jpeg
+
+utilization_state.json
+camera_log.json
+utilization_log.txt

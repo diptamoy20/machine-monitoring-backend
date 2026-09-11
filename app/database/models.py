@@ -53,6 +53,24 @@ class MachineUtilization(Base):
     total_available_time_formatted = Column(String, nullable=True)
     utilization_percent = Column(Float, nullable=False, default=0.0)
     undetected_time = Column(Float, nullable=False, default=0.0)
+    offline_time = Column(Float, nullable=False, default=0.0)
+    total_time = Column(Float, nullable=False, default=0.0)
 
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.datetime.now(datetime.timezone.utc), onupdate=lambda: datetime.datetime.now(datetime.timezone.utc))
+
+class CameraOfflineSession(Base):
+    """
+    Records specific downtime periods for cameras.
+    Allows generation of audit reports for client disputes.
+    """
+    __tablename__ = "camera_offline_sessions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    mc_id = Column(String, index=True, nullable=False)
+    channel_key = Column(String, nullable=False)
+    cam_ip = Column(String, nullable=True)
+    date = Column(Date, default=lambda: datetime.datetime.now(datetime.timezone.utc).date(), nullable=False)
+    went_offline_at = Column(DateTime(timezone=True), nullable=False)
+    came_online_at = Column(DateTime(timezone=True), nullable=True)
+    duration_seconds = Column(Float, nullable=True)
 
