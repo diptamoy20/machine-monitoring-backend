@@ -26,7 +26,7 @@ import subprocess
 import requests
 from datetime import datetime
 
-RECAPTURE_INTERVAL_SECONDS = 1800  # 30 minutes
+RECAPTURE_INTERVAL_SECONDS = 600  # 10 minutes (ensures fresh footage throughout the day)
 
 
 class ClipRecorder:
@@ -97,6 +97,7 @@ class ClipRecorder:
         try:
             cv2.imwrite(self.image_path, frame)
             print(f"[SNAPSHOT SAVED] {self.machine_id} -> {self.image_path}")
+            self._notify_snapshot(status)
         except Exception as e:
             print(f"[SNAPSHOT FAILED] {self.machine_id} could not save image: {e}")
             self.image_path = None
@@ -192,6 +193,31 @@ class ClipRecorder:
             print(f"[TRANSCODE FAILED] ffmpeg error:\n{result.stderr}")
             return False
         return True
+
+    def _notify_snapshot(self, status):
+        """Immediately update machine thumbnail image in the database without waiting 30s for video."""
+        if not self.api_base_url or not self.image_path or not os.path.exists(self.image_path):
+            return
+
+        status_map = {"running": "running", "stopped": "stop"}
+        api_status = status_map.get(status.lower(), status.lower())
+        image_base_name = os.path.basename(self.image_path)
+        image_url = f"/static/images/{image_base_name}"
+
+        patch_payload = {
+            "status": api_status,
+            "image_url": image_url,
+            "detected_at": datetime.now().astimezone().isoformat(),
+        }
+        patch_url = f"{self.api_base_url}/api/machines/{self.machine_id}"
+        try:
+            resp = requests.patch(patch_url, json=patch_payload, timeout=5)
+            if resp.status_code == 200:
+                print(f"[THUMBNAIL SYNCED] {self.machine_id} -> {image_url}")
+            else:
+                print(f"[THUMBNAIL SYNC FAILED] {self.machine_id} HTTP {resp.status_code}")
+        except Exception as e:
+            print(f"[THUMBNAIL SYNC ERROR] {self.machine_id}: {e}")
 
     def _notify_api(self):
         base_name = os.path.basename(self.filename)

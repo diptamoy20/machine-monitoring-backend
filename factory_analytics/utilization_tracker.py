@@ -16,25 +16,62 @@ class UtilizationTracker:
         self.daily_totals = self._load_state()
 
     def _load_state(self):
+        data = {}
         if os.path.exists(self.state_path):
             try:
                 with open(self.state_path, "r") as f:
-                    data = json.load(f)
-                if data:
-                    first_key = next(iter(data))
+                    loaded = json.load(f)
+                if loaded:
+                    first_key = next(iter(loaded))
                     if first_key.startswith("MC-"):
                         print("[UTILIZATION] Old-format state file detected - discarding, starting fresh.")
-                        return {}
-                    sample_date = next(iter(data.values()))
-                    if sample_date:
-                        sample_machine = next(iter(sample_date.values()))
-                        if "offline" not in sample_machine:
-                            print("[UTILIZATION] Old schema (no offline bucket) detected - discarding, starting fresh.")
-                            return {}
-                return data
+                        loaded = {}
+                    else:
+                        sample_date = next(iter(loaded.values()), {})
+                        if sample_date:
+                            sample_machine = next(iter(sample_date.values()), {})
+                            if "offline" not in sample_machine:
+                                print("[UTILIZATION] Old schema (no offline bucket) detected - discarding, starting fresh.")
+                                loaded = {}
+                data = loaded or {}
             except (json.JSONDecodeError, StopIteration):
-                return {}
-        return {}
+                data = {}
+
+        # Self-healing synchronization with Database API:
+        # Check if the database has higher or existing numbers for today.
+        # This prevents a stale local file from overwriting database updates!
+        if self.api_base_url:
+            today_str = self._today_str()
+            try:
+                resp = requests.get(f"{self.api_base_url}/api/utilization", timeout=5)
+                if resp.status_code == 200:
+                    db_items = resp.json()
+                    data.setdefault(today_str, {})
+                    for row in db_items:
+                        if str(row.get("date")) == today_str:
+                            mc = row.get("mc_id")
+                            if not mc:
+                                continue
+                            db_run = float(row.get("runtime") or 0.0)
+                            db_down = float(row.get("downtime") or 0.0)
+                            db_un = float(row.get("undetected_time") or 0.0)
+
+                            local_mc = data[today_str].get(mc, {})
+                            local_run = float(local_mc.get("runtime") or 0.0)
+
+                            # If DB has greater or equal runtime, or local machine is missing, adopt DB values
+                            if db_run >= local_run or mc not in data[today_str]:
+                                data[today_str][mc] = {
+                                    "runtime": db_run,
+                                    "downtime": db_down,
+                                    "offline": db_un,
+                                    "undetected": 0.0,
+                                }
+                    print(f"[UTILIZATION] Verified and synced memory state with DB for {today_str}.")
+            except Exception as e:
+                print(f"[UTILIZATION] DB pre-sync skipped (API unreachable): {e}")
+
+        return data
 
     def _today_str(self):
         return datetime.now().strftime("%Y-%m-%d")
