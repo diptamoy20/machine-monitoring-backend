@@ -7,11 +7,14 @@ logger = logging.getLogger(__name__)
 
 
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
+
+IST = ZoneInfo("Asia/Kolkata")
 
 def sync_utilization(db: Session, payload: UtilizationSyncRequest):
     """Upsert one row per machine - overwrite, never insert duplicates."""
     updated = []
-    current_date = datetime.now(timezone.utc).date()
+    current_date = datetime.now(IST).date()
     for mc_id, item in payload.data.items():
         row = db.query(MachineUtilization).filter(
             MachineUtilization.mc_id == mc_id,
