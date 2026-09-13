@@ -6,7 +6,7 @@ Uses RtspStreamReader (rtsp_reader.py) for adaptive flow control,
 smart protocol self-healing, watchdog, and exponential backoff.
 
 Resolver returns "running", "stopped", or "offline" per machine each
-tick, using real measured wall-clock Δt, feeding directly into
+tick, using real measured wall-clock Î”t, feeding directly into
 UtilizationTracker's Runtime/Downtime/Offline calculation.
 """
 
@@ -156,6 +156,8 @@ def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
                 time.sleep(0.05)
                 continue
 
+            set_camera_status(shared_camera_status, channel_key, cam_ip, "online")
+
             for idx, roi in enumerate(rois):
                 machine_id = roi["machine_id"]
 
@@ -259,7 +261,7 @@ def update_camera_status_for_machines(shared_camera_status, machine_to_channels)
     Runs every CAMERA_LOG_WRITE_INTERVAL_SECONDS (10s).
     Sends camera_status to the API for each machine.
     When online, also sends detected_at = now so the frontend always shows a
-    live 'last seen' timestamp — instead of waiting up to 30 min for the next
+    live 'last seen' timestamp â€” instead of waiting up to 30 min for the next
     clip recording to finish (RECAPTURE_INTERVAL_SECONDS in recorder.py).
     """
     now_iso = datetime.now().astimezone().isoformat()
@@ -271,9 +273,9 @@ def update_camera_status_for_machines(shared_camera_status, machine_to_channels)
         )
         new_status = "online" if is_online else "offline"
 
-        # When the feed is live, keep detected_at current (≤10s lag).
+        # When the feed is live, keep detected_at current (â‰¤10s lag).
         # When offline, leave detected_at untouched so it shows the
-        # last real detection time — useful for audit / client disputes.
+        # last real detection time â€” useful for audit / client disputes.
         patch_payload = {"camera_status": new_status}
         if is_online:
             patch_payload["detected_at"] = now_iso
@@ -350,3 +352,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

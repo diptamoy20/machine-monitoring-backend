@@ -24,6 +24,7 @@ import time
 import shutil
 import subprocess
 import requests
+import threading
 from datetime import datetime
 
 RECAPTURE_INTERVAL_SECONDS = 600  # 10 minutes (ensures fresh footage throughout the day)
@@ -57,6 +58,8 @@ class ClipRecorder:
 
         self.last_captured_status = None
         self.last_captured_time = None
+
+        self._stop_lock = threading.Lock()
 
     def _generate_filenames(self, status):
         now = datetime.now()
@@ -132,6 +135,10 @@ class ClipRecorder:
             self.stop(early=True)
 
     def stop(self, early=True):
+        with self._stop_lock:
+            self._stop_locked(early)
+
+    def _stop_locked(self, early):
         if self.recording and self.writer is not None:
             elapsed = time.time() - self.start_time if self.start_time else 0
             actual_fps = (self.frames_written / elapsed) if elapsed > 0 else self.declared_fps
@@ -270,3 +277,5 @@ class ClipRecorder:
                 print(f"[HISTORY LOG FAILED] {self.machine_id} {response.status_code}: {response.text}")
         except requests.exceptions.RequestException as e:
             print(f"[HISTORY LOG ERROR] {self.machine_id} could not reach API: {e}")
+
+
