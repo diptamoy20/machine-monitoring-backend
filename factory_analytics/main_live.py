@@ -116,6 +116,7 @@ def set_camera_status(shared_camera_status, channel_key, cam_ip, status):
         entry = dict(shared_camera_status.get(channel_key, {}))
         previous_status = entry.get("status")
 
+        entry["channel"] = channel_key
         entry["cam_ip"] = cam_ip
         entry["status"] = status
         entry["last_checked"] = now_iso
@@ -125,8 +126,8 @@ def set_camera_status(shared_camera_status, channel_key, cam_ip, status):
 
         if status == "offline" and previous_status != "offline":
             log_camera_offline_event(channel_key, now)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[CAMERA STATUS ERROR] {channel_key}: {e}")
 
 
 def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
@@ -234,6 +235,7 @@ def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
 
     fps = 25
     print(f"[{channel_key}] Detection & Tracking loop running.")
+    last_status_ping = 0.0
 
     try:
         while not stop_event.is_set():
@@ -243,7 +245,10 @@ def camera_pipeline(url, stop_event, shared_observations, shared_camera_status):
                 time.sleep(0.04)
                 continue
 
-            set_camera_status(shared_camera_status, channel_key, cam_ip, "online")
+            now_mono = time.time()
+            if now_mono - last_status_ping >= 3.0:
+                set_camera_status(shared_camera_status, channel_key, cam_ip, "online")
+                last_status_ping = now_mono
 
             # 1. Run YOLO Object Detection once per frame if needed
             detection_boxes = []
@@ -377,13 +382,24 @@ def get_machine_to_channels_map():
     return mapping
 
 
-def update_camera_status_for_machines(shared_camera_status, machine_to_channels):
+def update_camera_status_for_machines(shared_camera_status, machine_to_channels, shared_observations=None):
+    now = time.time()
     now_iso = datetime.now().astimezone().isoformat()
+
+    # Determine which channels are actively producing frame observations
+    active_channels_from_obs = set()
+    if shared_observations is not None:
+        try:
+            for (obs_m_id, ch_key), (lbl, conf, obs_ts) in list(shared_observations.items()):
+                if now - obs_ts <= OBSERVATION_STALE_SECONDS + 5.0:
+                    active_channels_from_obs.add(ch_key)
+        except Exception:
+            pass
 
     for machine_id, channels in machine_to_channels.items():
         try:
             is_online = any(
-                shared_camera_status.get(ch, {}).get("status") == "online"
+                shared_camera_status.get(ch, {}).get("status") == "online" or ch in active_channels_from_obs
                 for ch in channels
             )
         except Exception:
@@ -484,7 +500,7 @@ def main():
 
             if time.time() - last_camera_log_time >= config.CAMERA_LOG_WRITE_INTERVAL_SECONDS:
                 write_camera_log(shared_camera_status)
-                update_camera_status_for_machines(shared_camera_status, machine_to_channels)
+                update_camera_status_for_machines(shared_camera_status, machine_to_channels, shared_observations)
                 last_camera_log_time = time.time()
 
     except KeyboardInterrupt:
