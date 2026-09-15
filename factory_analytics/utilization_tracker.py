@@ -76,10 +76,17 @@ class UtilizationTracker:
     def _today_str(self):
         return datetime.now().strftime("%Y-%m-%d")
 
+    TOTAL_AVAILABLE_TIME_SECONDS = 24 * 3600.0  # Constant 24 hours (86,400s)
+
     def _ensure_machine(self, date_str, machine_id):
         self.daily_totals.setdefault(date_str, {})
         self.daily_totals[date_str].setdefault(
-            machine_id, {"runtime": 0.0, "downtime": 0.0, "offline": 0.0, "undetected": 0.0}
+            machine_id, {
+                "runtime": 0.0,
+                "downtime": self.TOTAL_AVAILABLE_TIME_SECONDS,
+                "offline": 0.0,
+                "undetected": 0.0
+            }
         )
 
     def add_frame(self, machine_id, final_label, dt_seconds):
@@ -89,25 +96,34 @@ class UtilizationTracker:
         # ensure backward-compat for state files loaded without undetected key
         bucket.setdefault("undetected", 0.0)
 
+        # Runtime is accumulated based on real-time detection
         if final_label == "running":
             bucket["runtime"] += dt_seconds
-        elif final_label == "stopped":
-            bucket["downtime"] += dt_seconds
         elif final_label == "offline":
             bucket["offline"] += dt_seconds
         elif final_label == "uncertain":
             bucket["undetected"] += dt_seconds   # low-confidence = undetected
 
+        # Downtime = Total available time (24h) - Runtime
+        bucket["downtime"] = max(0.0, self.TOTAL_AVAILABLE_TIME_SECONDS - bucket["runtime"])
+
     def get_summary(self, date_str, machine_id):
         self._ensure_machine(date_str, machine_id)
         t = self.daily_totals[date_str][machine_id]
-        runtime  = t["runtime"]
-        downtime = t["downtime"]
-        offline  = t["offline"]
+        runtime = t["runtime"]
+        offline = t.get("offline", 0.0)
         undetected = t.get("undetected", 0.0)
 
-        total_available = runtime + downtime
-        utilization = (runtime / total_available * 100) if total_available > 0 else 0.0
+        # 1. Total available time = 24 hours (constant for all the time)
+        total_available = self.TOTAL_AVAILABLE_TIME_SECONDS
+
+        # 2. Downtime = Total available time - Runtime
+        downtime = max(0.0, total_available - runtime)
+        t["downtime"] = downtime
+
+        # 3. Utilization = (Runtime / (Runtime + Downtime)) * 100 = (Runtime / Total available time) * 100
+        total_time = runtime + downtime  # Always equals total_available (24 hours)
+        utilization = (runtime / total_time * 100.0) if total_time > 0 else 0.0
 
         return runtime, downtime, offline, undetected, total_available, utilization
 
@@ -138,7 +154,7 @@ class UtilizationTracker:
                     "offline_time": round(offline, 2),
                     "total_available_time": round(total_available, 2),
                     "total_available_time_formatted": self._format_duration(total_available),
-                    "total_time": round(total_available + offline, 2),
+                    "total_time": round(total_available, 2),
                     "utilization_percent": round(utilization, 2),
                 }
         return result
@@ -179,7 +195,7 @@ class UtilizationTracker:
                 h_down = self._to_hours(d["downtime"])
                 h_offline = self._to_hours(d["offline"])
                 h_available = h_run + h_down
-                sanity_total = h_run + h_down + h_offline
+                sanity_total = h_run + h_down
 
                 line = (f"{machine_id}_{date_str}_"
                         f"Runtime:{h_run}h_"

@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.config import settings
 from app.database.connection import engine, Base
-from app.routes import machines, inference, detection, utilization, roi_editor, camera_sessions
+from app.routes import machines, inference, detection, utilization, roi_editor, camera_sessions, live_stream
 import os
 
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +33,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL],
+    allow_origins=[settings.FRONTEND_URL] if settings.FRONTEND_URL != "*" else ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,6 +50,7 @@ app.include_router(detection.router)
 app.include_router(utilization.router)
 app.include_router(roi_editor.router)
 app.include_router(camera_sessions.router)
+app.include_router(live_stream.router)
 
 
 @app.on_event("startup")

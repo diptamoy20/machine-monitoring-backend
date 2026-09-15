@@ -3,16 +3,7 @@ import json
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-MODEL_PATH = os.path.join(PROJECT_ROOT, "best.pt")
-# VIDEO_PATHS = [
-#     os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-11 at 8.19.39 PM.mp4"),
-#     os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-12 at 2.28.35 AM.mp4"),
-#     os.path.join(PROJECT_ROOT, "WhatsApp Video 2026-08-11 at 8.19.39 aP (3).mp4"),
-#     os.path.join(PROJECT_ROOT, "WhatsAppVideo3.mp4"),
-#     os.path.join(PROJECT_ROOT, "WhatsAppVideo2.mp4"),
-#     os.path.join(PROJECT_ROOT, "WhatsAppVideo1.mp4"),
-# ]
-
+MODEL_PATH = os.path.join(PROJECT_ROOT, "best (5).pt")
 ROI_CONFIG_PATH = os.path.join(PROJECT_ROOT, "roi_config.json")
 DETECTION_DIR = os.path.join(PROJECT_ROOT, "Detection_temp")
 FINAL_VIDEO_DIR = os.path.join(PROJECT_ROOT, "app", "static", "videos")
@@ -23,18 +14,29 @@ UTILIZATION_LOG_PATH = os.path.join(PROJECT_ROOT, "utilization_log.txt")
 API_BASE_URL = "http://localhost:8000"
 MACHINE_IDS = [f"MC-{i:03d}" for i in range(1, 7)]
 
-SMOOTHING_WINDOW = 10
+# Classification & Tracking Parameters
+SMOOTHING_WINDOW = 5
 LETTERBOX_SIZE = 224
-CONFIDENCE_FLOOR = 65.0
+CONFIDENCE_FLOOR = 35.0
 RECORD_SECONDS = 30
 DEBUG_TRIGGER = False
 
+# MC-001 Motion Differencing Parameters
+MC001_MOTION_PIXEL_THRESHOLD = 80
+MC001_DIFF_THRESHOLD = 25
 
+# MC-002 .. MC-006 YOLO Detection & Displacement Parameters (aligned with detection.py)
+YOLO_CONF_THRESHOLD = 0.35
+YOLO_IOU_THRESHOLD = 0.35
+PIXELS_PER_METER = 50.0
+MIN_DISPLACEMENT_METERS = 1.0
+DISPLACEMENT_WINDOW_FRAMES = 15
+MOVEMENT_WINDOW_1M_FRAMES = 300
+
+# Active RTSP Streams (Channels 22 and 25 stopped; only 23 and 24 active)
 RTSP_URLS = [
-    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=22&subtype=1",
-    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=23&subtype=1",
-    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=24&subtype=1",
-    "rtsp://admin:admin@123@103.57.247.234:554/cam/realmonitor?channel=25&subtype=1",
+    "rtsp://admin:admin%40123@103.57.247.234:554/cam/realmonitor?channel=23&subtype=1",
+    "rtsp://admin:admin%40123@103.57.247.234:554/cam/realmonitor?channel=24&subtype=1",
 ]
 
 UTILIZATION_SYNC_INTERVAL_SECONDS = 60

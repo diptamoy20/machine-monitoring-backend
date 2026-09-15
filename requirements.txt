@@ -12,3 +12,6 @@ Pillow
 ultralytics
 opencv-python
 numpy
+supervision
+websocket-client
+websockets
